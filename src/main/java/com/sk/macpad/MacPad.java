@@ -11,7 +11,7 @@ public class MacPad {
             MainFrame frame = new MainFrame();
             EditorController controller = new EditorController(frame);
             frame.setController(controller);
-            controller.start();
+            controller.start(args);
             frame.setVisible(true);
         });
     }
