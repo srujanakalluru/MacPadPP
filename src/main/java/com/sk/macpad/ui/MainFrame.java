@@ -34,7 +34,6 @@ public class MainFrame extends JFrame {
     private Component center;
     private final JLabel status = new JLabel(" ");
     private EditorController controller;
-    private JComponent actionsTab;
 
     public MainFrame() {
         super("MacPad++");
@@ -273,12 +272,9 @@ public class MainFrame extends JFrame {
 
     private record ActionEntry(String name, String shortcut, Runnable action) {}
 
-    private void showActionsTab() {
-        if (actionsTab != null && tabs.indexOfComponent(actionsTab) >= 0) {
-            tabs.setSelectedComponent(actionsTab);
-            return;
-        }
-        java.util.List<ActionEntry> entries = java.util.List.of(
+    private List<ActionEntry> actionEntries() {
+        ActionEntry sep = new ActionEntry("", "", null);
+        return List.of(
                 new ActionEntry("New", "Cmd N", controller::newBuffer),
                 new ActionEntry("Open…", "Cmd O", controller::openDialog),
                 new ActionEntry("Save", "Cmd S", controller::saveCurrent),
@@ -291,6 +287,7 @@ public class MainFrame extends JFrame {
                 new ActionEntry("Reveal in Finder", "", controller::revealInFinder),
                 new ActionEntry("Copy Full Path", "", controller::copyPath),
                 new ActionEntry("Close Tab", "Cmd W", controller::closeCurrent),
+                sep,
                 new ActionEntry("Undo", "Cmd Z", controller::undo),
                 new ActionEntry("Redo", "Shift Cmd Z", controller::redo),
                 new ActionEntry("Select All", "Cmd A", controller::selectAll),
@@ -308,6 +305,7 @@ public class MainFrame extends JFrame {
                 new ActionEntry("Tabs to Spaces", "", controller::indentToSpaces),
                 new ActionEntry("Spaces to Tabs", "", controller::indentToTabs),
                 new ActionEntry("Toggle Comment", "Cmd /", controller::toggleComment),
+                sep,
                 new ActionEntry("Find…", "Cmd F", () -> showFindDialog(false)),
                 new ActionEntry("Replace…", "Shift Cmd F", () -> showFindDialog(true)),
                 new ActionEntry("Find in Files…", "", controller::findInFiles),
@@ -317,77 +315,33 @@ public class MainFrame extends JFrame {
                 new ActionEntry("Toggle Bookmark", "Cmd F2", controller::toggleBookmark),
                 new ActionEntry("Next Bookmark", "F2", controller::nextBookmark),
                 new ActionEntry("Previous Bookmark", "Shift F2", controller::previousBookmark),
+                sep,
                 new ActionEntry("Word Wrap", "", controller::toggleWrap),
                 new ActionEntry("Show Whitespace", "", controller::toggleWhitespace),
                 new ActionEntry("Show End of Line", "", controller::toggleEol),
                 new ActionEntry("Show Indent Guides", "", controller::toggleIndentGuides),
-                new ActionEntry("Clone to Other View", "Cmd \\", controller::cloneToOtherView),
+                new ActionEntry("Clone to Other View", "Cmd \", controller::cloneToOtherView),
                 new ActionEntry("Move to Other View", "", controller::moveToOtherView),
                 new ActionEntry("Zoom In", "Cmd =", () -> controller.zoom(1)),
                 new ActionEntry("Zoom Out", "Cmd -", () -> controller.zoom(-1)),
                 new ActionEntry("Reset Zoom", "Cmd 0", () -> controller.zoom(0)),
                 new ActionEntry("Toggle Theme", "", controller::toggleTheme),
+                sep,
                 new ActionEntry("Set Language…", "Shift Cmd L", controller::chooseLanguage),
                 new ActionEntry("About MacPad++", "", controller::showAbout));
-
-        javax.swing.table.DefaultTableModel model =
-                new javax.swing.table.DefaultTableModel(new Object[] {"Action", "Shortcut"}, 0) {
-                    @Override
-                    public boolean isCellEditable(int r, int c) {
-                        return false;
-                    }
-                };
-        for (ActionEntry en : entries) model.addRow(new Object[] {en.name(), en.shortcut()});
-        JTable table = new JTable(model);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(24);
-        table.setShowGrid(false);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getColumnModel().getColumn(1).setMaxWidth(200);
-        table.getColumnModel().getColumn(1).setPreferredWidth(170);
-        table.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) runActionRow(table, entries);
-            }
-        });
-        table.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "runAction");
-        table.getActionMap().put("runAction", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                runActionRow(table, entries);
-            }
-        });
-
-        JScrollPane scroll = new JScrollPane(table);
-        actionsTab = scroll;
-        tabs.addTab("Shortcuts", scroll);
-        tabs.setTabComponentAt(tabs.indexOfComponent(scroll), closableActionsTab());
-        tabs.setSelectedComponent(scroll);
     }
 
-    private void runActionRow(JTable table, java.util.List<ActionEntry> entries) {
-        int row = table.getSelectedRow();
-        if (row >= 0 && row < entries.size()) entries.get(row).action().run();
-    }
-
-    private JComponent closableActionsTab() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        panel.setOpaque(false);
-        JButton close = new JButton("×");
-        close.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
-        close.setContentAreaFilled(false);
-        close.setFocusable(false);
-        close.addActionListener(e -> {
-            if (actionsTab != null) {
-                int i = tabs.indexOfComponent(actionsTab);
-                if (i >= 0) tabs.remove(i);
-                actionsTab = null;
+    private JMenu shortcutsMenu() {
+        JMenu menu = new JMenu("Shortcuts");
+        for (ActionEntry en : actionEntries()) {
+            if (en.action() == null) {
+                menu.addSeparator();
+                continue;
             }
-        });
-        panel.add(new JLabel("Shortcuts"));
-        panel.add(close);
-        return panel;
+            String label = en.shortcut().isEmpty() ? en.name() : en.name() + " (" + en.shortcut() + ")";
+            menu.add(item(label, e -> en.action().run()));
+        }
+        return menu;
     }
 
     // ---- menus ----
@@ -404,7 +358,7 @@ public class MainFrame extends JFrame {
         bar.add(encodingMenu());
         JMenu help = new JMenu("Help");
         help.add(item("About MacPad++", e -> controller.showAbout()));
-        help.add(item("Show Action and Shortcut", e -> showActionsTab()));
+        bar.add(shortcutsMenu());
         bar.add(help);
         return bar;
     }
