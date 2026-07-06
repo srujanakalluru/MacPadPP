@@ -35,23 +35,6 @@ This produces a self-contained `target/jp/out/MacPad++-1.0.0.dmg` with its own b
 drag **MacPad++.app** into Applications. Launch it once so macOS registers it, and MacPad++ will appear under Finder's
 right-click **Open With**.
 
-## Run from source
-
-Open the project in IntelliJ IDEA and run `com.sk.macpad.MacPad`, or:
-
-```
-mvn exec:java
-```
-
-## Project layout
-
-| Path                           | Purpose                                                                               |
-|--------------------------------|---------------------------------------------------------------------------------------|
-| `src/main/java/com/sk/macpad/` | Source: `MacPad` entry point + layers `model`, `service`, `control`, `ui`, `platform` |
-| `src/main/packaging/`          | App icon (jpackage input)                                                             |
-| `pom.xml`                      | Dependencies (RSyntaxTextArea, FlatLaf, Lombok) and packaging                         |
-| `build-dmg.sh`                 | One-step DMG build via jpackage                                                       |
-
 ## License
 
 Proprietary - all rights reserved. See [LICENSE](LICENSE). The source is published for viewing only and may not be used,
