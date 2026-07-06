@@ -770,12 +770,14 @@ public class EditorController {
         String path = p.getProperty(pre + "path");
         boolean dirty = Boolean.parseBoolean(p.getProperty(pre + "dirty", "false"));
         String backup = p.getProperty(pre + "backup");
+        Buffer restored = null;
         if (dirty && backup != null) {
             Buffer b = createBuffer(p.getProperty(pre + "title", "restored"));
             String txt = SessionService.readBackup(backup);
             setBufferText(b, txt != null ? txt : "");
             b.setDirty(true);
             refreshTitle(b);
+            restored = b;
         } else if (dirty && path != null) {
             File file = new File(path);
             Buffer b = createBuffer(file.getName());
@@ -785,8 +787,14 @@ public class EditorController {
             setBufferText(b, txt != null ? txt : Files.readString(file.toPath()));
             b.setDirty(true);
             refreshTitle(b);
+            restored = b;
         } else if (path != null && new File(path).isFile()) {
             openFile(new File(path));
+            restored = current();
+        }
+        if (restored != null) {
+            String savedSyntax = p.getProperty(pre + "syntax");
+            if (savedSyntax != null && !savedSyntax.isEmpty()) restored.setSyntaxStyle(savedSyntax);
         }
         restoreCaret(p, pre);
     }
