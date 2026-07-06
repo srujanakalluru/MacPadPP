@@ -19,6 +19,10 @@ Notepad++ alternative for Macbook
 - Native screen menu bar, dark/light themes, whitespace / EOL / indent-guide display, code folding, zoom, word wrap,
   print, drag & drop
 
+## Download
+
+Download the latest **MacPad++.dmg** from the [Releases page](https://github.com/srujanakalluru/MacPadPP/releases/latest), open it, and drag **MacPad++.app** into Applications. Launch it once so macOS registers it.
+
 ## Requirements
 
 - macOS (Apple Silicon or Intel)
