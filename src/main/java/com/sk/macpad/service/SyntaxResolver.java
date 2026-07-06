@@ -10,10 +10,14 @@ import java.util.List;
  */
 public final class SyntaxResolver {
 
-    private SyntaxResolver() { }
+    private SyntaxResolver() {
+    }
 
-    /** A selectable language: display name and its RSyntaxTextArea style constant. */
-    public record Lang(String name, String style) { }
+    /**
+     * A selectable language: display name and its RSyntaxTextArea style constant.
+     */
+    public record Lang(String name, String style) {
+    }
 
     public static final List<Lang> CATALOG = List.of(
             new Lang("Plain Text", SyntaxConstants.SYNTAX_STYLE_NONE),

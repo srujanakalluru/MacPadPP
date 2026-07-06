@@ -7,7 +7,6 @@ import com.sk.macpad.model.Eol;
 import com.sk.macpad.service.FileSearchService;
 import com.sk.macpad.service.SyntaxResolver;
 import com.sk.macpad.service.TextCodec;
-
 import org.fife.ui.rtextarea.RTextArea;
 
 import javax.swing.*;
@@ -18,13 +17,7 @@ import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetAdapter;
 import java.awt.dnd.DropTargetDropEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -64,14 +57,25 @@ public class MainFrame extends JFrame {
         this.controller = controller;
         setJMenuBar(buildMenuBar());
         addWindowListener(new WindowAdapter() {
-            @Override public void windowClosing(WindowEvent e) { controller.quit(); }
+            @Override
+            public void windowClosing(WindowEvent e) {
+                controller.quit();
+            }
         });
         tabs.addMouseListener(new MouseAdapter() {
-            @Override public void mousePressed(MouseEvent e) { maybeTabPopup(e); }
-            @Override public void mouseReleased(MouseEvent e) { maybeTabPopup(e); }
+            @Override
+            public void mousePressed(MouseEvent e) {
+                maybeTabPopup(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                maybeTabPopup(e);
+            }
         });
         new DropTarget(tabs, new DropTargetAdapter() {
-            @Override public void drop(DropTargetDropEvent e) {
+            @Override
+            public void drop(DropTargetDropEvent e) {
                 try {
                     e.acceptDrop(DnDConstants.ACTION_COPY);
                     List<?> files = (List<?>) e.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
@@ -85,9 +89,13 @@ public class MainFrame extends JFrame {
         });
     }
 
-    public JTabbedPane tabs() { return tabs; }
+    public JTabbedPane tabs() {
+        return tabs;
+    }
 
-    public JTabbedPane secondaryTabs() { return secondaryTabs; }
+    public JTabbedPane secondaryTabs() {
+        return secondaryTabs;
+    }
 
     public void showSecondView(boolean show) {
         remove(center);
@@ -104,7 +112,9 @@ public class MainFrame extends JFrame {
         if (show) SwingUtilities.invokeLater(() -> viewSplit.setDividerLocation(0.5));
     }
 
-    public void setStatus(String text) { status.setText(text); }
+    public void setStatus(String text) {
+        status.setText(text);
+    }
 
     public void applyLookAndFeel(boolean dark) {
         try {
@@ -120,7 +130,8 @@ public class MainFrame extends JFrame {
         matches.forEach(model::addElement);
         JList<FileSearchService.Match> list = new JList<>(model);
         list.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     FileSearchService.Match m = list.getSelectedValue();
                     if (m != null) controller.openAt(m.file(), m.line());
@@ -167,22 +178,40 @@ public class MainFrame extends JFrame {
         JCheckBox extended = new JCheckBox("Extended (\\n, \\t)");
         JCheckBox searchUp = new JCheckBox("Search up");
 
-        c.gridx = 0; c.gridy = 0; panel.add(new JLabel("Find:"), c);
-        c.gridx = 1; c.gridy = 0; panel.add(find, c);
+        c.gridx = 0;
+        c.gridy = 0;
+        panel.add(new JLabel("Find:"), c);
+        c.gridx = 1;
+        c.gridy = 0;
+        panel.add(find, c);
         if (replace) {
-            c.gridx = 0; c.gridy = 1; panel.add(new JLabel("Replace:"), c);
-            c.gridx = 1; c.gridy = 1; panel.add(repl, c);
+            c.gridx = 0;
+            c.gridy = 1;
+            panel.add(new JLabel("Replace:"), c);
+            c.gridx = 1;
+            c.gridy = 1;
+            panel.add(repl, c);
         }
         JPanel opts = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        opts.add(matchCase); opts.add(whole); opts.add(regex); opts.add(extended); opts.add(searchUp);
-        c.gridx = 0; c.gridy = 2; c.gridwidth = 2; panel.add(opts, c);
+        opts.add(matchCase);
+        opts.add(whole);
+        opts.add(regex);
+        opts.add(extended);
+        opts.add(searchUp);
+        c.gridx = 0;
+        c.gridy = 2;
+        c.gridwidth = 2;
+        panel.add(opts, c);
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton findNext = new JButton("Find Next");
         JButton count = new JButton("Count");
         JButton markAll = new JButton("Mark All");
         JButton clearMarks = new JButton("Clear Marks");
-        buttons.add(count); buttons.add(markAll); buttons.add(clearMarks); buttons.add(findNext);
+        buttons.add(count);
+        buttons.add(markAll);
+        buttons.add(clearMarks);
+        buttons.add(findNext);
         findNext.addActionListener(e -> controller.find(query(find, extended, regex),
                 regex.isSelected(), matchCase.isSelected(), whole.isSelected(), !searchUp.isSelected()));
         find.addActionListener(e -> controller.find(query(find, extended, regex),
@@ -195,13 +224,17 @@ public class MainFrame extends JFrame {
         if (replace) {
             JButton replaceOne = new JButton("Replace");
             JButton replaceAll = new JButton("Replace All");
-            buttons.add(replaceOne); buttons.add(replaceAll);
+            buttons.add(replaceOne);
+            buttons.add(replaceAll);
             replaceOne.addActionListener(e -> controller.replaceNext(query(find, extended, regex),
                     regex.isSelected(), matchCase.isSelected(), whole.isSelected(), query(repl, extended, regex)));
             replaceAll.addActionListener(e -> controller.replaceAll(query(find, extended, regex),
                     regex.isSelected(), matchCase.isSelected(), whole.isSelected(), query(repl, extended, regex)));
         }
-        c.gridx = 0; c.gridy = 3; c.gridwidth = 2; panel.add(buttons, c);
+        c.gridx = 0;
+        c.gridy = 3;
+        c.gridwidth = 2;
+        panel.add(buttons, c);
 
         dialog.setContentPane(panel);
         dialog.pack();
@@ -379,8 +412,13 @@ public class MainFrame extends JFrame {
 
     private class RecentMenuListener implements javax.swing.event.MenuListener {
         private final JMenu menu;
-        RecentMenuListener(JMenu menu) { this.menu = menu; }
-        @Override public void menuSelected(javax.swing.event.MenuEvent e) {
+
+        RecentMenuListener(JMenu menu) {
+            this.menu = menu;
+        }
+
+        @Override
+        public void menuSelected(javax.swing.event.MenuEvent e) {
             menu.removeAll();
             List<String> paths = controller.recentFiles();
             for (String path : paths) menu.add(item(path, ev -> controller.openFile(new File(path))));
@@ -392,8 +430,12 @@ public class MainFrame extends JFrame {
                 menu.add(item("Clear Recent", ev -> controller.clearRecent()));
             }
         }
-        @Override public void menuDeselected(javax.swing.event.MenuEvent e) { /* no-op */ }
-        @Override public void menuCanceled(javax.swing.event.MenuEvent e) { /* no-op */ }
+
+        @Override
+        public void menuDeselected(javax.swing.event.MenuEvent e) { /* no-op */ }
+
+        @Override
+        public void menuCanceled(javax.swing.event.MenuEvent e) { /* no-op */ }
     }
 
     private JMenuItem item(String label, ActionListener a) {
