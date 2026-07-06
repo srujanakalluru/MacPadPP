@@ -1177,7 +1177,7 @@ public class EditorController {
             int ci = indexOfArea(frame.secondaryTabs(), clone);
             if (ci >= 0) setTabLabel(frame.secondaryTabs(), ci, shown);
         }
-        if (b.equals(current())) frame.setTitle(shown + " — " + APP);
+        if (b.equals(current())) frame.setTitle(shown);
     }
 
     private void setTabLabel(JTabbedPane pane, int idx, String shown) {
