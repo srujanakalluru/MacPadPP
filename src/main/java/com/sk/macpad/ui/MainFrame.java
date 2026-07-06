@@ -320,7 +320,7 @@ public class MainFrame extends JFrame {
                 new ActionEntry("Show Whitespace", "", controller::toggleWhitespace),
                 new ActionEntry("Show End of Line", "", controller::toggleEol),
                 new ActionEntry("Show Indent Guides", "", controller::toggleIndentGuides),
-                new ActionEntry("Clone to Other View", "Cmd \", controller::cloneToOtherView),
+                new ActionEntry("Clone to Other View", "Cmd \\", controller::cloneToOtherView),
                 new ActionEntry("Move to Other View", "", controller::moveToOtherView),
                 new ActionEntry("Zoom In", "Cmd =", () -> controller.zoom(1)),
                 new ActionEntry("Zoom Out", "Cmd -", () -> controller.zoom(-1)),

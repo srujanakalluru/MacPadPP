@@ -599,7 +599,7 @@ public class EditorController {
 
     public void showAbout() {
         JOptionPane.showMessageDialog(frame,
-                APP + " 1.0.0\nA Notepad++-style editor for macOS.",
+                APP + " 1.0.0\nA Notepad++ style editor for macOS.",
                 "About " + APP, JOptionPane.INFORMATION_MESSAGE);
     }
 
