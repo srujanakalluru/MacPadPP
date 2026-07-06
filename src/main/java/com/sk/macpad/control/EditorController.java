@@ -7,20 +7,11 @@ import com.sk.macpad.service.SessionService;
 import com.sk.macpad.service.SyntaxResolver;
 import com.sk.macpad.service.TextCodec;
 import com.sk.macpad.ui.MainFrame;
-
 import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextAreaEditorKit;
 import org.fife.ui.rsyntaxtextarea.Theme;
-import org.fife.ui.rtextarea.Gutter;
-import org.fife.ui.rtextarea.GutterIconInfo;
-import org.fife.ui.rtextarea.RTextScrollPane;
-import org.fife.ui.rtextarea.SearchContext;
-import org.fife.ui.rtextarea.SearchEngine;
-import org.fife.ui.rtextarea.SearchResult;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.image.BufferedImage;
+import org.fife.ui.rtextarea.*;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -30,19 +21,16 @@ import javax.swing.text.BadLocationException;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.image.BufferedImage;
 import java.awt.print.PrinterException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -102,9 +90,17 @@ public class EditorController {
         if (isEmpty()) newBuffer();
     }
 
-    public boolean isEmpty() { return buffers.isEmpty(); }
-    public boolean isDark() { return dark; }
-    public boolean isWrap() { return wordWrap; }
+    public boolean isEmpty() {
+        return buffers.isEmpty();
+    }
+
+    public boolean isDark() {
+        return dark;
+    }
+
+    public boolean isWrap() {
+        return wordWrap;
+    }
 
     private Buffer current() {
         if (focusedArea != null) {
@@ -143,7 +139,10 @@ public class EditorController {
         area.setFont(area.getFont().deriveFont((float) fontSize));
         applyThemeTo(area);
         area.addFocusListener(new FocusAdapter() {
-            @Override public void focusGained(FocusEvent e) { focusedArea = area; }
+            @Override
+            public void focusGained(FocusEvent e) {
+                focusedArea = area;
+            }
         });
         area.addCaretListener(e -> updateStatus());
     }
@@ -159,8 +158,14 @@ public class EditorController {
         tabs.addTab(title, b.getScroll());
         tabs.setTabComponentAt(tabs.indexOfComponent(b.getScroll()), tabComponent(b));
         area.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { onEdit(b); }
-            public void removeUpdate(DocumentEvent e) { onEdit(b); }
+            public void insertUpdate(DocumentEvent e) {
+                onEdit(b);
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                onEdit(b);
+            }
+
             public void changedUpdate(DocumentEvent e) { /* no-op */ }
         });
         refreshTitle(b);
@@ -169,7 +174,10 @@ public class EditorController {
 
     private void onEdit(Buffer b) {
         if (suppressDirty) return;
-        if (!b.isDirty()) { b.setDirty(true); refreshTitle(b); }
+        if (!b.isDirty()) {
+            b.setDirty(true);
+            refreshTitle(b);
+        }
         updateStatus();
     }
 
@@ -236,7 +244,10 @@ public class EditorController {
     public void openFile(File file) {
         File f = canonical(file);
         for (Buffer b : buffers) {
-            if (f.equals(b.getFile())) { selectBuffer(b); return; }
+            if (f.equals(b.getFile())) {
+                selectBuffer(b);
+                return;
+            }
         }
         try {
             TextCodec.Decoded d = TextCodec.decode(Files.readAllBytes(f.toPath()));
@@ -301,8 +312,16 @@ public class EditorController {
         }
     }
 
-    public void saveCurrent() { save(current(), false); saveSession(); }
-    public void saveCurrentAs() { save(current(), true); saveSession(); }
+    public void saveCurrent() {
+        save(current(), false);
+        saveSession();
+    }
+
+    public void saveCurrentAs() {
+        save(current(), true);
+        saveSession();
+    }
+
     public void saveAll() {
         for (Buffer b : buffers) {
             if (b.isDirty() || b.getFile() == null) save(b, false);
@@ -341,9 +360,20 @@ public class EditorController {
         }
     }
 
-    public void undo() { Buffer b = current(); if (b != null) b.getArea().undoLastAction(); }
-    public void redo() { Buffer b = current(); if (b != null) b.getArea().redoLastAction(); }
-    public void selectAll() { Buffer b = current(); if (b != null) b.getArea().selectAll(); }
+    public void undo() {
+        Buffer b = current();
+        if (b != null) b.getArea().undoLastAction();
+    }
+
+    public void redo() {
+        Buffer b = current();
+        if (b != null) b.getArea().redoLastAction();
+    }
+
+    public void selectAll() {
+        Buffer b = current();
+        if (b != null) b.getArea().selectAll();
+    }
 
     public void toggleComment() {
         Buffer b = current();
@@ -351,8 +381,15 @@ public class EditorController {
         Action a = b.getArea().getActionMap().get(RSyntaxTextAreaEditorKit.rstaToggleCommentAction);
         if (a != null) a.actionPerformed(new ActionEvent(b.getArea(), ActionEvent.ACTION_PERFORMED, ""));
     }
-    public void transformUpper() { transform(String::toUpperCase); }
-    public void transformLower() { transform(String::toLowerCase); }
+
+    public void transformUpper() {
+        transform(String::toUpperCase);
+    }
+
+    public void transformLower() {
+        transform(String::toLowerCase);
+    }
+
     private void transform(Function<String, String> fn) {
         Buffer b = current();
         if (b == null) return;
@@ -367,17 +404,20 @@ public class EditorController {
         if (!r.wasFound()) frame.setStatus("Not found: " + query);
         return r.wasFound();
     }
+
     public void replaceNext(String query, boolean regex, boolean matchCase, boolean wholeWord, String replacement) {
         Buffer b = current();
         if (b == null || query.isEmpty()) return;
         SearchEngine.replace(b.getArea(), context(query, regex, matchCase, wholeWord, true, replacement));
     }
+
     public void replaceAll(String query, boolean regex, boolean matchCase, boolean wholeWord, String replacement) {
         Buffer b = current();
         if (b == null || query.isEmpty()) return;
         SearchResult r = SearchEngine.replaceAll(b.getArea(), context(query, regex, matchCase, wholeWord, true, replacement));
         frame.setStatus("Replaced " + r.getCount() + " occurrence(s)");
     }
+
     private SearchContext context(String query, boolean regex, boolean matchCase, boolean wholeWord,
                                   boolean forward, String replacement) {
         SearchContext c = new SearchContext();
@@ -467,20 +507,23 @@ public class EditorController {
         for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setLineWrap(wordWrap);
         saveSession();
     }
+
     public void zoom(int delta) {
         fontSize = delta == 0 ? 13 : Math.max(8, Math.min(40, fontSize + delta));
         for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setFont(a.getFont().deriveFont((float) fontSize));
         saveSession();
     }
+
     public void toggleTheme() {
         dark = !dark;
         frame.applyLookAndFeel(dark);
         for (RSyntaxTextArea a : areaToBuffer.keySet()) applyThemeTo(a);
         saveSession();
     }
+
     private void applyThemeTo(RSyntaxTextArea area) {
         String resource = dark ? "/org/fife/ui/rsyntaxtextarea/themes/dark.xml"
-                               : "/org/fife/ui/rsyntaxtextarea/themes/default.xml";
+                : "/org/fife/ui/rsyntaxtextarea/themes/default.xml";
         try (InputStream in = getClass().getResourceAsStream(resource)) {
             if (in != null) {
                 Theme.load(in).apply(area);
@@ -498,6 +541,7 @@ public class EditorController {
         updateStatus();
         saveSession();
     }
+
     public void setEncoding(String label) {
         Buffer b = current();
         if (b == null) return;
@@ -507,6 +551,7 @@ public class EditorController {
         refreshTitle(b);
         updateStatus();
     }
+
     public void setEol(Eol eol) {
         Buffer b = current();
         if (b == null) return;
@@ -516,8 +561,15 @@ public class EditorController {
         updateStatus();
     }
 
-    public List<String> recentFiles() { return new ArrayList<>(recent); }
-    public void clearRecent() { recent.clear(); saveSession(); }
+    public List<String> recentFiles() {
+        return new ArrayList<>(recent);
+    }
+
+    public void clearRecent() {
+        recent.clear();
+        saveSession();
+    }
+
     private void pushRecent(String path) {
         recent.remove(path);
         recent.addFirst(path);
@@ -527,7 +579,7 @@ public class EditorController {
     public void showAbout() {
         JOptionPane.showMessageDialog(frame,
                 APP + " 1.0.0\nA Notepad++-style editor for macOS.\n" +
-                "Java + Swing + RSyntaxTextArea.",
+                        "Java + Swing + RSyntaxTextArea.",
                 "About " + APP, JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -656,21 +708,57 @@ public class EditorController {
     }
 
     // ---- line operations ----
-    public void duplicateLine() { withArea(this::duplicateLineOn); }
-    public void deleteLine() { withArea(this::deleteLineOn); }
-    public void moveLineUp() { withArea(a -> moveLine(a, -1)); }
-    public void moveLineDown() { withArea(a -> moveLine(a, 1)); }
-    public void joinLines() { withArea(this::joinLinesOn); }
-    public void sortLinesAscending() { transformLines(lines -> { lines.sort(Comparator.naturalOrder()); return lines; }); }
-    public void sortLinesDescending() { transformLines(lines -> { lines.sort(Comparator.reverseOrder()); return lines; }); }
-    public void removeDuplicateLines() { transformLines(lines -> new ArrayList<>(new LinkedHashSet<>(lines))); }
+    public void duplicateLine() {
+        withArea(this::duplicateLineOn);
+    }
+
+    public void deleteLine() {
+        withArea(this::deleteLineOn);
+    }
+
+    public void moveLineUp() {
+        withArea(a -> moveLine(a, -1));
+    }
+
+    public void moveLineDown() {
+        withArea(a -> moveLine(a, 1));
+    }
+
+    public void joinLines() {
+        withArea(this::joinLinesOn);
+    }
+
+    public void sortLinesAscending() {
+        transformLines(lines -> {
+            lines.sort(Comparator.naturalOrder());
+            return lines;
+        });
+    }
+
+    public void sortLinesDescending() {
+        transformLines(lines -> {
+            lines.sort(Comparator.reverseOrder());
+            return lines;
+        });
+    }
+
+    public void removeDuplicateLines() {
+        transformLines(lines -> new ArrayList<>(new LinkedHashSet<>(lines)));
+    }
+
     public void trimTrailingWhitespace() {
         withArea(a -> replacePreservingCaret(a, Arrays.stream(a.getText().split("\n", -1))
                 .map(String::stripTrailing)
                 .collect(Collectors.joining("\n"))));
     }
-    public void indentToSpaces() { withArea(a -> replacePreservingCaret(a, a.getText().replace("\t", "    "))); }
-    public void indentToTabs() { withArea(a -> replacePreservingCaret(a, tabifyLeadingSpaces(a.getText()))); }
+
+    public void indentToSpaces() {
+        withArea(a -> replacePreservingCaret(a, a.getText().replace("\t", "    ")));
+    }
+
+    public void indentToTabs() {
+        withArea(a -> replacePreservingCaret(a, tabifyLeadingSpaces(a.getText())));
+    }
 
     private void withArea(Consumer<RSyntaxTextArea> op) {
         RSyntaxTextArea area = activeArea();
@@ -775,19 +863,30 @@ public class EditorController {
     }
 
     // ---- view toggles ----
-    public boolean isShowWhitespace() { return showWhitespace; }
-    public boolean isShowEol() { return showEol; }
+    public boolean isShowWhitespace() {
+        return showWhitespace;
+    }
+
+    public boolean isShowEol() {
+        return showEol;
+    }
+
     public void toggleWhitespace() {
         showWhitespace = !showWhitespace;
         for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setWhitespaceVisible(showWhitespace);
         saveSession();
     }
+
     public void toggleEol() {
         showEol = !showEol;
         for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setEOLMarkersVisible(showEol);
         saveSession();
     }
-    public boolean isIndentGuides() { return indentGuides; }
+
+    public boolean isIndentGuides() {
+        return indentGuides;
+    }
+
     public void toggleIndentGuides() {
         indentGuides = !indentGuides;
         for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setPaintTabLines(indentGuides);
@@ -936,8 +1035,13 @@ public class EditorController {
         }
     }
 
-    public void nextBookmark() { gotoBookmark(true); }
-    public void previousBookmark() { gotoBookmark(false); }
+    public void nextBookmark() {
+        gotoBookmark(true);
+    }
+
+    public void previousBookmark() {
+        gotoBookmark(false);
+    }
 
     private void gotoBookmark(boolean forward) {
         RSyntaxTextArea area = activeArea();
@@ -1031,6 +1135,7 @@ public class EditorController {
             // ignore
         }
     }
+
     public void copyPath() {
         Buffer b = current();
         if (b == null || b.getFile() == null) return;
@@ -1066,7 +1171,10 @@ public class EditorController {
 
     private void updateStatus() {
         Buffer b = current();
-        if (b == null) { frame.setStatus(" "); return; }
+        if (b == null) {
+            frame.setStatus(" ");
+            return;
+        }
         RSyntaxTextArea area = activeArea();
         if (area == null) area = b.getArea();
         try {

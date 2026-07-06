@@ -4,9 +4,11 @@ import com.sk.macpad.control.EditorController;
 import com.sk.macpad.platform.MacIntegration;
 import com.sk.macpad.ui.MainFrame;
 
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
-/** Application entry point and composition root: wires the layers together and starts the app. */
+/**
+ * Application entry point and composition root: wires the layers together and starts the app.
+ */
 public class MacPad {
 
     public static void main(String[] args) {

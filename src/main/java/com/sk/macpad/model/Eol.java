@@ -1,6 +1,8 @@
 package com.sk.macpad.model;
 
-/** A line-ending style and its byte sequence. */
+/**
+ * A line-ending style and its byte sequence.
+ */
 public enum Eol {
     LF("\n"),
     CRLF("\r\n"),

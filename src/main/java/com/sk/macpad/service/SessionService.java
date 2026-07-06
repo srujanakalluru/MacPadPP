@@ -1,11 +1,6 @@
 package com.sk.macpad.service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.util.Properties;
 
@@ -15,7 +10,8 @@ import java.util.Properties;
  */
 public final class SessionService {
 
-    private SessionService() { }
+    private SessionService() {
+    }
 
     public static File appDir() {
         File dir = new File(System.getProperty("user.home"), "Library/Application Support/MacPad++");

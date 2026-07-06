@@ -10,20 +10,28 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-/** One open document: the editor component plus its file and edit state. */
+/**
+ * One open document: the editor component plus its file and edit state.
+ */
 @Getter
 public class Buffer {
 
     private final RSyntaxTextArea area;
     private final RTextScrollPane scroll;
 
-    @Setter private File file;
-    @Setter private Charset charset = StandardCharsets.UTF_8;
-    @Setter private boolean bom;
-    @Setter private Eol eol = Eol.LF;
+    @Setter
+    private File file;
+    @Setter
+    private Charset charset = StandardCharsets.UTF_8;
+    @Setter
+    private boolean bom;
+    @Setter
+    private Eol eol = Eol.LF;
     private String syntaxStyle = SyntaxConstants.SYNTAX_STYLE_NONE;
-    @Setter private boolean dirty;
-    @Setter private String title;
+    @Setter
+    private boolean dirty;
+    @Setter
+    private String title;
 
     public Buffer(String title, RSyntaxTextArea area) {
         this.title = title;

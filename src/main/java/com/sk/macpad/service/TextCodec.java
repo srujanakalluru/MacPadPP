@@ -13,14 +13,20 @@ import java.util.List;
  */
 public final class TextCodec {
 
-    private TextCodec() { }
+    private TextCodec() {
+    }
 
-    /** Encoding labels offered in the Encoding menu. */
+    /**
+     * Encoding labels offered in the Encoding menu.
+     */
     public static final List<String> ENCODINGS = List.of(
             "UTF-8", "UTF-8 BOM", "UTF-16LE", "UTF-16BE", "ISO-8859-1", "windows-1252");
 
-    /** Result of decoding: normalized text plus the detected encoding and EOL. */
-    public record Decoded(String text, Charset charset, boolean bom, Eol eol) { }
+    /**
+     * Result of decoding: normalized text plus the detected encoding and EOL.
+     */
+    public record Decoded(String text, Charset charset, boolean bom, Eol eol) {
+    }
 
     public static Charset charsetForLabel(String label) {
         return Charset.forName(label.replace(" BOM", ""));
@@ -42,11 +48,17 @@ public final class TextCodec {
         boolean bom = false;
         int skip = 0;
         if (b.length >= 3 && (b[0] & 0xFF) == 0xEF && (b[1] & 0xFF) == 0xBB && (b[2] & 0xFF) == 0xBF) {
-            charset = StandardCharsets.UTF_8; bom = true; skip = 3;
+            charset = StandardCharsets.UTF_8;
+            bom = true;
+            skip = 3;
         } else if (b.length >= 2 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xFE) {
-            charset = StandardCharsets.UTF_16LE; bom = true; skip = 2;
+            charset = StandardCharsets.UTF_16LE;
+            bom = true;
+            skip = 2;
         } else if (b.length >= 2 && (b[0] & 0xFF) == 0xFE && (b[1] & 0xFF) == 0xFF) {
-            charset = StandardCharsets.UTF_16BE; bom = true; skip = 2;
+            charset = StandardCharsets.UTF_16BE;
+            bom = true;
+            skip = 2;
         } else {
             charset = looksUtf8(b) ? StandardCharsets.UTF_8 : Charset.forName("windows-1252");
         }

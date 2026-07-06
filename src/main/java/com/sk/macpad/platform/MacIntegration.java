@@ -2,8 +2,8 @@ package com.sk.macpad.platform;
 
 import com.sk.macpad.control.EditorController;
 
-import javax.swing.SwingUtilities;
-import java.awt.Desktop;
+import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.util.List;
 
@@ -13,7 +13,8 @@ import java.util.List;
  */
 public final class MacIntegration {
 
-    private MacIntegration() { }
+    private MacIntegration() {
+    }
 
     public static void configureSystemProperties() {
         System.setProperty("apple.laf.useScreenMenuBar", "true");

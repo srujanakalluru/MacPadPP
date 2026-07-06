@@ -13,19 +13,25 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/** Recursive "Find in Files" search over a directory tree. */
+/**
+ * Recursive "Find in Files" search over a directory tree.
+ */
 public final class FileSearchService {
 
-    private FileSearchService() { }
+    private FileSearchService() {
+    }
 
     private static final Set<String> SKIP_DIRS =
             Set.of("node_modules", ".git", ".svn", "dist", "build", ".cache", "__pycache__");
     private static final long MAX_FILE_SIZE = 2_000_000;
     private static final int MAX_MATCHES = 2000;
 
-    /** One matching line. */
+    /**
+     * One matching line.
+     */
     public record Match(File file, int line, String preview) {
-        @Override public String toString() {
+        @Override
+        public String toString() {
             return file.getName() + ":" + line + "   " + preview;
         }
     }
@@ -34,14 +40,16 @@ public final class FileSearchService {
         List<Match> matches = new ArrayList<>();
         try {
             Files.walkFileTree(root.toPath(), new SimpleFileVisitor<>() {
-                @Override public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                     String name = dir.getFileName() == null ? "" : dir.getFileName().toString();
                     boolean skip = SKIP_DIRS.contains(name)
                             || (name.startsWith(".") && !dir.equals(root.toPath()));
                     return skip ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
                 }
 
-                @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (attrs.size() > MAX_FILE_SIZE || matches.size() > MAX_MATCHES) {
                         return FileVisitResult.CONTINUE;
                     }
