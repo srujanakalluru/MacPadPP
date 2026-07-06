@@ -139,6 +139,7 @@ public class MainFrame extends JFrame {
             }
         });
         JDialog dialog = new JDialog(this, matches.size() + " matches in " + root.getName(), false);
+        closeOnEscape(dialog);
         dialog.add(new JScrollPane(list));
         dialog.setSize(700, 420);
         dialog.setLocationRelativeTo(this);
@@ -165,6 +166,7 @@ public class MainFrame extends JFrame {
     // ---- find / replace ----
     private void showFindDialog(boolean replace) {
         JDialog dialog = new JDialog(this, replace ? "Replace" : "Find", false);
+        closeOnEscape(dialog);
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(4, 6, 4, 6);
@@ -513,6 +515,14 @@ public class MainFrame extends JFrame {
 
         @Override
         public void menuCanceled(javax.swing.event.MenuEvent e) { /* no-op */ }
+    }
+
+    private void closeOnEscape(JDialog dialog) {
+        dialog.getRootPane()
+                .registerKeyboardAction(
+                        e -> dialog.dispose(),
+                        KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                        JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     private JMenuItem item(String label, ActionListener a) {
