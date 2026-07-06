@@ -606,20 +606,9 @@ public class EditorController {
 
     public void quit() {
         saveSession();
-        if (confirmCloseAll()) frame.dispose();
+        frame.dispose();
     }
 
-    public boolean confirmCloseAll() {
-        for (Buffer b : buffers) {
-            if (!b.isDirty()) continue;
-            selectBuffer(b);
-            int choice = JOptionPane.showConfirmDialog(frame, "Save changes to \"" + b.displayName() + "\"?",
-                    APP, JOptionPane.YES_NO_CANCEL_OPTION);
-            if (choice == JOptionPane.CANCEL_OPTION) return false;
-            if (choice == JOptionPane.YES_OPTION && !save(b, false)) return false;
-        }
-        return true;
-    }
 
     public void saveSession() {
         Properties p = new Properties();

@@ -42,8 +42,7 @@ public final class MacIntegration {
         try {
             desktop.setQuitHandler((event, response) -> {
                 controller.saveSession();
-                if (controller.confirmCloseAll()) response.performQuit();
-                else response.cancelQuit();
+                response.performQuit();
             });
         } catch (UnsupportedOperationException ignored) {
             // ignore
