@@ -46,6 +46,7 @@ public class EditorController {
 
     private static final String APP = "MacPad++";
     private static final Icon BOOKMARK_ICON = makeBookmarkIcon();
+    private static final int AUTOSAVE_INTERVAL_MS = 5000;
 
     private static final String SHORTCUTS =
             """
@@ -106,6 +107,7 @@ public class EditorController {
         this.frame = frame;
         frame.tabs().addChangeListener(e -> onTabChanged(frame.tabs()));
         frame.secondaryTabs().addChangeListener(e -> onTabChanged(frame.secondaryTabs()));
+        new javax.swing.Timer(AUTOSAVE_INTERVAL_MS, e -> saveSession()).start();
     }
 
     private void onTabChanged(JTabbedPane pane) {
