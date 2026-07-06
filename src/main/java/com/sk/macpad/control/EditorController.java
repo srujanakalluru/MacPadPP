@@ -651,6 +651,20 @@ public class EditorController {
                 "About " + APP, JOptionPane.INFORMATION_MESSAGE);
     }
 
+    public int fontSize() {
+        return fontSize;
+    }
+
+    public void setFontSize(int size) {
+        fontSize = Math.max(8, Math.min(40, size));
+        for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setFont(a.getFont().deriveFont((float) fontSize));
+        saveSession();
+    }
+
+    public void showPreferences() {
+        frame.showPreferences();
+    }
+
 
     public void quit() {
         saveSession();

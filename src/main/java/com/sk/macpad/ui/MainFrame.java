@@ -347,6 +347,59 @@ public class MainFrame extends JFrame {
         return menu;
     }
 
+    private JMenu windowMenu(int mask) {
+        JMenu menu = new JMenu("Window");
+        menu.add(item("Minimize", 'M', mask, e -> setExtendedState(getExtendedState() | Frame.ICONIFIED)));
+        menu.add(item("Zoom", e -> setExtendedState(getExtendedState() ^ Frame.MAXIMIZED_BOTH)));
+        return menu;
+    }
+
+    public void showPreferences() {
+        JDialog dialog = new JDialog(this, "Preferences", false);
+        closeOnEscape(dialog);
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.anchor = GridBagConstraints.WEST;
+        c.insets = new Insets(3, 0, 3, 0);
+
+        JCheckBox darkBox = new JCheckBox("Dark theme", controller.isDark());
+        darkBox.addActionListener(e -> controller.toggleTheme());
+        JCheckBox wrapBox = new JCheckBox("Word wrap", controller.isWrap());
+        wrapBox.addActionListener(e -> controller.toggleWrap());
+        JCheckBox wsBox = new JCheckBox("Show whitespace", controller.isShowWhitespace());
+        wsBox.addActionListener(e -> controller.toggleWhitespace());
+        JCheckBox eolBox = new JCheckBox("Show end of line", controller.isShowEol());
+        eolBox.addActionListener(e -> controller.toggleEol());
+        JCheckBox guidesBox = new JCheckBox("Show indent guides", controller.isIndentGuides());
+        guidesBox.addActionListener(e -> controller.toggleIndentGuides());
+
+        JPanel fontRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        JSpinner fontSpinner = new JSpinner(new SpinnerNumberModel(controller.fontSize(), 8, 40, 1));
+        fontSpinner.addChangeListener(e -> controller.setFontSize((Integer) fontSpinner.getValue()));
+        fontRow.add(new JLabel("Font size:"));
+        fontRow.add(fontSpinner);
+
+        c.gridy = 0;
+        panel.add(darkBox, c);
+        c.gridy = 1;
+        panel.add(wrapBox, c);
+        c.gridy = 2;
+        panel.add(wsBox, c);
+        c.gridy = 3;
+        panel.add(eolBox, c);
+        c.gridy = 4;
+        panel.add(guidesBox, c);
+        c.gridy = 5;
+        panel.add(fontRow, c);
+
+        dialog.setContentPane(panel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
     // ---- menus ----
     private JMenuBar buildMenuBar() {
         int mask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
@@ -362,6 +415,7 @@ public class MainFrame extends JFrame {
         JMenu help = new JMenu("Help");
         help.add(item("About MacPad++", e -> controller.showAbout()));
         bar.add(shortcutsMenu());
+        bar.add(windowMenu(mask));
         bar.add(help);
         return bar;
     }

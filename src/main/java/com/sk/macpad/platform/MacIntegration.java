@@ -40,6 +40,11 @@ public final class MacIntegration {
             // ignore
         }
         try {
+            desktop.setPreferencesHandler(event -> SwingUtilities.invokeLater(controller::showPreferences));
+        } catch (UnsupportedOperationException ignored) {
+            // ignore
+        }
+        try {
             desktop.setQuitHandler((event, response) -> {
                 controller.saveSession();
                 response.performQuit();
