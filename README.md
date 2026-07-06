@@ -22,7 +22,7 @@ Notepad++ alternative for Macbook
 ## Requirements
 
 - macOS (Apple Silicon or Intel)
-- JDK 17 or newer
+- JDK 22 or newer (uses the Foreign Function API for the trackpad pinch gesture)
 - Maven (bundled with IntelliJ IDEA)
 
 ## Build

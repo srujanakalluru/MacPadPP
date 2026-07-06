@@ -20,6 +20,7 @@ public class MacPad {
             MacIntegration.install(controller);
             controller.start(args);
             frame.setVisible(true);
+            controller.enablePinchZoom();
         });
     }
 }
