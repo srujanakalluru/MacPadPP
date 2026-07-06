@@ -280,7 +280,7 @@ public class MainFrame extends JFrame {
         bar.add(editMenu(mask, shift, alt));
         bar.add(searchMenu(mask, shift));
         bar.add(viewMenu(mask));
-        bar.add(languageMenu());
+        bar.add(languageMenu(mask, shift));
         bar.add(encodingMenu());
         JMenu help = new JMenu("Help");
         help.add(item("About MacPad++", e -> controller.showAbout()));
@@ -387,8 +387,10 @@ public class MainFrame extends JFrame {
         return view;
     }
 
-    private JMenu languageMenu() {
+    private JMenu languageMenu(int mask, int shift) {
         JMenu language = new JMenu("Language");
+        language.add(item("Set Language…", 'L', mask | shift, e -> controller.chooseLanguage()));
+        language.addSeparator();
         for (SyntaxResolver.Lang lang : SyntaxResolver.CATALOG) {
             language.add(item(lang.name(), e -> controller.setLanguage(lang.style())));
         }

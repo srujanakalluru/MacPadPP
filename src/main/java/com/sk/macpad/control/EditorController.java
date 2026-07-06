@@ -542,6 +542,24 @@ public class EditorController {
         saveSession();
     }
 
+    public void chooseLanguage() {
+        Buffer b = current();
+        if (b == null) return;
+        Object[] names = SyntaxResolver.CATALOG.stream().map(SyntaxResolver.Lang::name).toArray();
+        String currentName = SyntaxResolver.nameFor(b.getSyntaxStyle());
+        Object choice =
+                JOptionPane.showInputDialog(
+                        frame, "Language:", "Set Language",
+                        JOptionPane.PLAIN_MESSAGE, null, names, currentName);
+        if (choice == null) return;
+        for (SyntaxResolver.Lang lang : SyntaxResolver.CATALOG) {
+            if (lang.name().equals(choice)) {
+                setLanguage(lang.style());
+                return;
+            }
+        }
+    }
+
     public void setEncoding(String label) {
         Buffer b = current();
         if (b == null) return;
@@ -578,8 +596,7 @@ public class EditorController {
 
     public void showAbout() {
         JOptionPane.showMessageDialog(frame,
-                APP + " 1.0.0\nA Notepad++-style editor for macOS.\n" +
-                        "Java + Swing + RSyntaxTextArea.",
+                APP + " 1.0.0\nA Notepad++-style editor for macOS.",
                 "About " + APP, JOptionPane.INFORMATION_MESSAGE);
     }
 
