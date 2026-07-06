@@ -22,8 +22,8 @@ Notepad++ alternative for Macbook
 ## Requirements
 
 - macOS (Apple Silicon or Intel)
-- JDK 17 or newer
-- Maven (bundled with IntelliJ IDEA)
+- JDK 22 or newer
+- Maven
 
 ## Build
 

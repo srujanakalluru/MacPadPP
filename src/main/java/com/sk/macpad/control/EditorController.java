@@ -2,6 +2,7 @@ package com.sk.macpad.control;
 
 import com.sk.macpad.model.Buffer;
 import com.sk.macpad.model.Eol;
+import com.sk.macpad.platform.MagnifyGesture;
 import com.sk.macpad.service.FileSearchService;
 import com.sk.macpad.service.SessionService;
 import com.sk.macpad.service.SyntaxResolver;
@@ -64,6 +65,8 @@ public class EditorController {
     private boolean showEol = false;
     private boolean indentGuides = false;
     private int newCounter = 1;
+    private double zoomAccum;
+    private double magnifyAccum;
 
     private boolean suppressDirty = false;
 
@@ -153,6 +156,20 @@ public class EditorController {
             }
         });
         area.addCaretListener(e -> updateStatus());
+        area.addMouseWheelListener(
+                e -> {
+                    if ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) == 0) return;
+                    e.consume();
+                    zoomAccum += e.getPreciseWheelRotation();
+                    while (zoomAccum >= 1) {
+                        zoom(1);
+                        zoomAccum -= 1;
+                    }
+                    while (zoomAccum <= -1) {
+                        zoom(-1);
+                        zoomAccum += 1;
+                    }
+                });
     }
 
     private Buffer createBuffer(String title) {
@@ -563,6 +580,22 @@ public class EditorController {
         fontSize = delta == 0 ? 13 : Math.max(8, Math.min(40, fontSize + delta));
         for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setFont(a.getFont().deriveFont((float) fontSize));
         saveSession();
+    }
+
+    public void enablePinchZoom() {
+        MagnifyGesture.install(this::magnify);
+    }
+
+    public void magnify(double delta) {
+        magnifyAccum += delta;
+        while (magnifyAccum >= 0.1) {
+            zoom(1);
+            magnifyAccum -= 0.1;
+        }
+        while (magnifyAccum <= -0.1) {
+            zoom(-1);
+            magnifyAccum += 0.1;
+        }
     }
 
     public void toggleTheme() {

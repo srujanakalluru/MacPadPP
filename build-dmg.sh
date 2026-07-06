@@ -35,6 +35,7 @@ jpackage \
   --java-options -Dapple.laf.useScreenMenuBar=true \
   --java-options -Dapple.awt.application.name=MacPad++ \
   --java-options -Xdock:name=MacPad++ \
+  --java-options --enable-native-access=ALL-UNNAMED \
   --dest target/jp/app
 
 APP="target/jp/app/MacPad++.app"
