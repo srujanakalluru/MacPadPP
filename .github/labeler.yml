@@ -1,0 +1,51 @@
+# Auto-labels pull requests by the part of MacPad++ they touch.
+# Schema: actions/labeler v5+ (https://github.com/actions/labeler).
+
+app:
+  - changed-files:
+      - any-glob-to-any-file: 'src/main/java/com/sk/macpad/*.java'
+
+model:
+  - changed-files:
+      - any-glob-to-any-file: 'src/**/java/com/**/model/**/*.java'
+
+service:
+  - changed-files:
+      - any-glob-to-any-file: 'src/**/java/com/**/service/**/*.java'
+
+controller:
+  - changed-files:
+      - any-glob-to-any-file: 'src/**/java/com/**/control/**/*.java'
+
+ui:
+  - changed-files:
+      - any-glob-to-any-file: 'src/**/java/com/**/ui/**/*.java'
+
+platform:
+  - changed-files:
+      - any-glob-to-any-file: 'src/**/java/com/**/platform/**/*.java'
+
+resources:
+  - changed-files:
+      - any-glob-to-any-file: 'src/main/resources/**/*'
+
+packaging:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/main/packaging/**/*'
+          - 'build-dmg.sh'
+
+maven:
+  - changed-files:
+      - any-glob-to-any-file: 'pom.xml'
+
+workflow:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**/*'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'README.md'
+          - 'LICENSE'
+          - 'THIRD-PARTY-NOTICES.txt'
