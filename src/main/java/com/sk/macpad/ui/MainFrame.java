@@ -173,6 +173,7 @@ public class MainFrame extends JFrame {
         c.fill = GridBagConstraints.HORIZONTAL;
 
         JTextField find = new JTextField(28);
+        find.setText(controller.searchSeed());
         JTextField repl = new JTextField(28);
         JCheckBox matchCase = new JCheckBox("Match case");
         JCheckBox whole = new JCheckBox("Whole word");
@@ -432,6 +433,9 @@ public class MainFrame extends JFrame {
         JMenu search = new JMenu("Search");
         search.add(item("Find…", 'F', mask, e -> showFindDialog(false)));
         search.add(item("Replace…", 'F', mask | shift, e -> showFindDialog(true)));
+        search.add(item("Find Next", 'G', mask, e -> controller.findNext()));
+        search.add(item("Find Previous", 'G', mask | shift, e -> controller.findPrevious()));
+        search.add(item("Use Selection for Find", 'E', mask, e -> controller.useSelectionForFind()));
         search.addSeparator();
         search.add(item("Find in Files…", e -> controller.findInFiles()));
         search.add(item("Go to Line…", 'L', mask, e -> controller.goToLine()));

@@ -67,6 +67,11 @@ public class EditorController {
 
     private boolean suppressDirty = false;
 
+    private String lastQuery = "";
+    private boolean lastRegex;
+    private boolean lastMatchCase;
+    private boolean lastWholeWord;
+
     public EditorController(MainFrame frame) {
         this.frame = frame;
         frame.tabs().addChangeListener(e -> onTabChanged(frame.tabs()));
@@ -401,11 +406,53 @@ public class EditorController {
     }
 
     public boolean find(String query, boolean regex, boolean matchCase, boolean wholeWord, boolean forward) {
-        Buffer b = current();
-        if (b == null || query.isEmpty()) return false;
-        SearchResult r = SearchEngine.find(b.getArea(), context(query, regex, matchCase, wholeWord, forward, null));
+        RSyntaxTextArea area = activeArea();
+        if (area == null || query.isEmpty()) return false;
+        rememberSearch(query, regex, matchCase, wholeWord);
+        SearchResult r = SearchEngine.find(area, context(query, regex, matchCase, wholeWord, forward, null));
         if (!r.wasFound()) frame.setStatus("Not found: " + query);
         return r.wasFound();
+    }
+
+    public void findNext() {
+        repeatFind(true);
+    }
+
+    public void findPrevious() {
+        repeatFind(false);
+    }
+
+    private void repeatFind(boolean forward) {
+        RSyntaxTextArea area = activeArea();
+        if (area == null || lastQuery.isEmpty()) return;
+        SearchResult r =
+                SearchEngine.find(area, context(lastQuery, lastRegex, lastMatchCase, lastWholeWord, forward, null));
+        if (!r.wasFound()) frame.setStatus("Not found: " + lastQuery);
+    }
+
+    public void useSelectionForFind() {
+        RSyntaxTextArea area = activeArea();
+        if (area == null) return;
+        String sel = area.getSelectedText();
+        if (sel == null || sel.isEmpty()) return;
+        rememberSearch(sel, false, false, false);
+        frame.setStatus("Find: " + sel);
+    }
+
+    public String searchSeed() {
+        RSyntaxTextArea area = activeArea();
+        if (area != null) {
+            String sel = area.getSelectedText();
+            if (sel != null && !sel.isEmpty()) return sel;
+        }
+        return lastQuery;
+    }
+
+    private void rememberSearch(String query, boolean regex, boolean matchCase, boolean wholeWord) {
+        lastQuery = query;
+        lastRegex = regex;
+        lastMatchCase = matchCase;
+        lastWholeWord = wholeWord;
     }
 
     public void replaceNext(String query, boolean regex, boolean matchCase, boolean wholeWord, String replacement) {
@@ -435,11 +482,12 @@ public class EditorController {
     }
 
     public int markAll(String query, boolean regex, boolean matchCase, boolean wholeWord) {
-        Buffer b = current();
-        if (b == null || query.isEmpty()) return 0;
+        RSyntaxTextArea area = activeArea();
+        if (area == null || query.isEmpty()) return 0;
+        rememberSearch(query, regex, matchCase, wholeWord);
         SearchContext c = context(query, regex, matchCase, wholeWord, true, null);
         c.setMarkAll(true);
-        SearchResult r = SearchEngine.markAll(b.getArea(), c);
+        SearchResult r = SearchEngine.markAll(area, c);
         frame.setStatus(r.getMarkedCount() + " match(es)");
         return r.getMarkedCount();
     }
