@@ -284,6 +284,7 @@ public class MainFrame extends JFrame {
         bar.add(encodingMenu());
         JMenu help = new JMenu("Help");
         help.add(item("About MacPad++", e -> controller.showAbout()));
+        help.add(item("Keyboard Shortcuts", e -> controller.showShortcuts()));
         bar.add(help);
         return bar;
     }

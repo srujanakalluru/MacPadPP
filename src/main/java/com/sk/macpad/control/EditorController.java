@@ -47,6 +47,43 @@ public class EditorController {
     private static final String APP = "MacPad++";
     private static final Icon BOOKMARK_ICON = makeBookmarkIcon();
 
+    private static final String SHORTCUTS =
+            """
+            MacPad++ - Keyboard Shortcuts
+            (Cmd = Command, Shift, Opt = Option)
+
+            Files
+              New tab ...................... Cmd N
+              Open ......................... Cmd O
+              Save / Save As ............... Cmd S / Shift Cmd S
+              Print ........................ Cmd P
+              Close tab .................... Cmd W
+
+            Edit
+              Undo / Redo .................. Cmd Z / Shift Cmd Z
+              Cut / Copy / Paste ........... Cmd X / Cmd C / Cmd V
+              Select all ................... Cmd A
+              Duplicate line ............... Cmd D
+              Delete line .................. Shift Cmd K
+              Move line up / down .......... Opt Up / Opt Down
+              Join lines ................... Cmd J
+              Toggle comment ............... Cmd /
+
+            Search
+              Find / Replace ............... Cmd F / Shift Cmd F
+              Go to line ................... Cmd L
+              Go to matching bracket ....... Cmd B
+              Toggle bookmark .............. Cmd F2
+              Next / previous bookmark ..... F2 / Shift F2
+
+            View
+              Clone to other view .......... Cmd Backslash
+              Zoom in / out / reset ........ Cmd = / Cmd - / Cmd 0
+
+            Language
+              Set language ................. Shift Cmd L
+            """;
+
     private final MainFrame frame;
     private final List<Buffer> buffers = new ArrayList<>();
     private final Deque<String> recent = new ArrayDeque<>();
@@ -598,6 +635,22 @@ public class EditorController {
         JOptionPane.showMessageDialog(frame,
                 APP + " 1.0.0\nA Notepad++-style editor for macOS.",
                 "About " + APP, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void showShortcuts() {
+        for (Buffer b : buffers) {
+            if ("Shortcuts".equals(b.getTitle()) && b.getFile() == null) {
+                selectBuffer(b);
+                return;
+            }
+        }
+        Buffer b = createBuffer("Shortcuts");
+        setBufferText(b, SHORTCUTS);
+        b.getArea().setEditable(false);
+        b.getArea().setCaretPosition(0);
+        b.setDirty(false);
+        selectBuffer(b);
+        refreshTitle(b);
     }
 
     public void quit() {
