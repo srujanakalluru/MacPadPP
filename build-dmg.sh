@@ -4,6 +4,9 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+VERSION=$(grep -m1 '<version>' pom.xml | sed -E 's/.*<version>([^<]*)<\/version>.*/\1/')
+[ -n "$VERSION" ] || { echo "Could not read <version> from pom.xml" >&2; exit 1; }
+
 # --- Use a JDK 22+ (the app relies on the Foreign Function API) ---
 jdk_major() {
   local v
@@ -57,7 +60,7 @@ ICON=""; [ -f src/main/packaging/icon.icns ] && ICON="--icon src/main/packaging/
 jpackage \
   --type app-image \
   --name "MacPad++" \
-  --app-version 1.0.0 \
+  --app-version "$VERSION" \
   --vendor SK \
   --input target/jp/input \
   --main-jar macpad.jar \
@@ -112,7 +115,7 @@ echo "==> jpackage: wrapping the app into a DMG"
 jpackage \
   --type dmg \
   --name "MacPad++" \
-  --app-version 1.0.0 \
+  --app-version "$VERSION" \
   --app-image "$APP" \
   --dest target/jp/out
 
