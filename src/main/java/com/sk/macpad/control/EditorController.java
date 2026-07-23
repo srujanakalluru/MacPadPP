@@ -258,12 +258,62 @@ public class EditorController {
     }
 
     public void openDialog() {
+        Buffer cur = current();
+        String seed = (cur != null && cur.getFile() != null) ? cur.getFile().getAbsolutePath() : "";
+        JTextField field = new JTextField(seed, 40);
+        field.addAncestorListener(new javax.swing.event.AncestorListener() {
+            public void ancestorAdded(javax.swing.event.AncestorEvent e) {
+                field.selectAll();
+                field.requestFocusInWindow();
+            }
+
+            public void ancestorMoved(javax.swing.event.AncestorEvent e) {
+            }
+
+            public void ancestorRemoved(javax.swing.event.AncestorEvent e) {
+            }
+        });
+        JButton copy = new JButton("Copy");
+        copy.addActionListener(e -> Toolkit.getDefaultToolkit().getSystemClipboard()
+                .setContents(new StringSelection(field.getText().trim()), null));
+        JPanel panel = new JPanel(new BorderLayout(6, 0));
+        panel.add(new JLabel("Path:"), BorderLayout.WEST);
+        panel.add(field, BorderLayout.CENTER);
+        panel.add(copy, BorderLayout.EAST);
+
+        Object[] options = {"Open", "Browse…", "Cancel"};
+        int choice = JOptionPane.showOptionDialog(frame, panel, "Open",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+        if (choice == 1) {
+            browseOpen();
+            return;
+        }
+        if (choice != 0) return;
+
+        String text = field.getText().trim();
+        if (text.isEmpty()) return;
+        File f = resolvePath(text);
+        if (!f.isFile()) {
+            JOptionPane.showMessageDialog(frame, "No file at:\n" + f.getAbsolutePath(),
+                    APP, JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        openFile(f);
+        saveSession();
+    }
+
+    private void browseOpen() {
         JFileChooser fc = new JFileChooser(currentDir());
         fc.setMultiSelectionEnabled(true);
         if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
             for (File f : fc.getSelectedFiles()) openFile(f);
             saveSession();
         }
+    }
+
+    private File resolvePath(String path) {
+        if (path.startsWith("~")) path = System.getProperty("user.home") + path.substring(1);
+        return new File(path);
     }
 
     public void openFile(File file) {
