@@ -79,7 +79,16 @@ public class EditorController {
         this.frame = frame;
         frame.tabs().addChangeListener(e -> onTabChanged(frame.tabs()));
         frame.secondaryTabs().addChangeListener(e -> onTabChanged(frame.secondaryTabs()));
-        new javax.swing.Timer(AUTOSAVE_INTERVAL_MS, e -> saveSession()).start();
+        new javax.swing.Timer(AUTOSAVE_INTERVAL_MS, e -> {
+            saveSession();
+            checkExternalChanges();
+        }).start();
+        frame.addWindowFocusListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowGainedFocus(java.awt.event.WindowEvent e) {
+                checkExternalChanges();
+            }
+        });
     }
 
     private void onTabChanged(JTabbedPane pane) {
@@ -337,6 +346,7 @@ public class EditorController {
             b.getArea().setCaretPosition(0);
             b.getArea().discardAllEdits();
             b.setDirty(false);
+            b.setDiskModified(f.lastModified());
             selectBuffer(b);
             refreshTitle(b);
             pushRecent(f.getAbsolutePath());
@@ -376,6 +386,7 @@ public class EditorController {
             b.setFile(target);
             b.setSyntaxStyle(SyntaxResolver.forFileName(target.getName()));
             b.setDirty(false);
+            b.setDiskModified(target.lastModified());
             refreshTitle(b);
             pushRecent(target.getAbsolutePath());
             SessionService.deleteBackup(SessionService.backupNameFor(target));
@@ -418,8 +429,40 @@ public class EditorController {
             setBufferText(b, d.text());
             b.getArea().discardAllEdits();
             b.setDirty(false);
+            b.setDiskModified(b.getFile().lastModified());
             refreshTitle(b);
             updateStatus();
+        } catch (IOException ignored) {
+            // ignore
+        }
+    }
+
+    public void checkExternalChanges() {
+        for (Buffer b : buffers) {
+            File f = b.getFile();
+            if (f == null) continue;
+            long m = f.lastModified();
+            if (m == 0L || m == b.getDiskModified()) continue;
+            if (b.isDirty()) continue;
+            reloadSilently(b);
+        }
+    }
+
+    private void reloadSilently(Buffer b) {
+        File f = b.getFile();
+        int caret = b.getArea().getCaretPosition();
+        try {
+            TextCodec.Decoded d = TextCodec.decode(Files.readAllBytes(f.toPath()));
+            b.setCharset(d.charset());
+            b.setBom(d.bom());
+            b.setEol(d.eol());
+            setBufferText(b, d.text());
+            b.getArea().discardAllEdits();
+            b.setDirty(false);
+            b.setDiskModified(f.lastModified());
+            b.getArea().setCaretPosition(Math.min(caret, b.getArea().getDocument().getLength()));
+            refreshTitle(b);
+            if (b == current()) updateStatus();
         } catch (IOException ignored) {
             // ignore
         }
