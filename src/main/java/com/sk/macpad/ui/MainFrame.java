@@ -154,6 +154,10 @@ public class MainFrame extends JFrame {
         tabs.setSelectedIndex(idx);
         JPopupMenu popup = new JPopupMenu();
         popup.add(item("Close", ev -> controller.closeCurrent()));
+        popup.add(item("Close Others", ev -> controller.closeOthers()));
+        popup.add(item("Close to the Left", ev -> controller.closeToLeft()));
+        popup.add(item("Close to the Right", ev -> controller.closeToRight()));
+        popup.add(item("Close All", ev -> controller.closeAll()));
         popup.addSeparator();
         popup.add(item("Clone to Other View", ev -> controller.cloneToOtherView()));
         popup.add(item("Move to Other View", ev -> controller.moveToOtherView()));
@@ -227,11 +231,15 @@ public class MainFrame extends JFrame {
         if (replace) {
             JButton replaceOne = new JButton("Replace");
             JButton replaceAll = new JButton("Replace All");
+            JButton replaceAllDocs = new JButton("Replace All in All Docs");
             buttons.add(replaceOne);
             buttons.add(replaceAll);
+            buttons.add(replaceAllDocs);
             replaceOne.addActionListener(e -> controller.replaceNext(query(find, extended, regex),
                     regex.isSelected(), matchCase.isSelected(), whole.isSelected(), query(repl, extended, regex)));
             replaceAll.addActionListener(e -> controller.replaceAll(query(find, extended, regex),
+                    regex.isSelected(), matchCase.isSelected(), whole.isSelected(), query(repl, extended, regex)));
+            replaceAllDocs.addActionListener(e -> controller.replaceAllInAll(query(find, extended, regex),
                     regex.isSelected(), matchCase.isSelected(), whole.isSelected(), query(repl, extended, regex)));
         }
         c.gridx = 0;
@@ -290,6 +298,10 @@ public class MainFrame extends JFrame {
                 new ActionEntry("Reveal in Finder", "", controller::revealInFinder),
                 new ActionEntry("Copy Full Path", "", controller::copyPath),
                 new ActionEntry("Close Tab", "Cmd W", controller::closeCurrent),
+                new ActionEntry("Close Others", "", controller::closeOthers),
+                new ActionEntry("Close to the Left", "", controller::closeToLeft),
+                new ActionEntry("Close to the Right", "", controller::closeToRight),
+                new ActionEntry("Close All", "Shift Cmd W", controller::closeAll),
                 sep,
                 new ActionEntry("Undo", "Cmd Z", controller::undo),
                 new ActionEntry("Redo", "Shift Cmd Z", controller::redo),
@@ -308,6 +320,7 @@ public class MainFrame extends JFrame {
                 new ActionEntry("Tabs to Spaces", "", controller::indentToSpaces),
                 new ActionEntry("Spaces to Tabs", "", controller::indentToTabs),
                 new ActionEntry("Toggle Comment", "Cmd /", controller::toggleComment),
+                new ActionEntry("Reformat", "Opt Cmd L", controller::reformat),
                 sep,
                 new ActionEntry("Find…", "Cmd F", () -> showFindDialog(false)),
                 new ActionEntry("Replace…", "Shift Cmd F", () -> showFindDialog(true)),
@@ -441,6 +454,10 @@ public class MainFrame extends JFrame {
         file.add(item("Move to Trash", e -> controller.deleteCurrentFile()));
         file.addSeparator();
         file.add(item("Close Tab", 'W', mask, e -> controller.closeCurrent()));
+        file.add(item("Close Others", e -> controller.closeOthers()));
+        file.add(item("Close to the Left", e -> controller.closeToLeft()));
+        file.add(item("Close to the Right", e -> controller.closeToRight()));
+        file.add(item("Close All", 'W', mask | shift, e -> controller.closeAll()));
         return file;
     }
 
@@ -480,6 +497,7 @@ public class MainFrame extends JFrame {
 
         edit.addSeparator();
         edit.add(item("Toggle Comment", '/', mask, e -> controller.toggleComment()));
+        edit.add(item("Reformat", 'L', mask | java.awt.event.InputEvent.ALT_DOWN_MASK, e -> controller.reformat()));
         return edit;
     }
 
