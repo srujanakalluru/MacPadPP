@@ -11,6 +11,7 @@ import com.sk.macpad.ui.MainFrame;
 import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextAreaEditorKit;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.*;
 
@@ -65,7 +66,6 @@ public class EditorController {
     private boolean showEol = false;
     private boolean indentGuides = false;
     private int newCounter = 1;
-    private double zoomAccum;
     private double magnifyAccum;
 
     private boolean suppressDirty = false;
@@ -79,7 +79,16 @@ public class EditorController {
         this.frame = frame;
         frame.tabs().addChangeListener(e -> onTabChanged(frame.tabs()));
         frame.secondaryTabs().addChangeListener(e -> onTabChanged(frame.secondaryTabs()));
-        new javax.swing.Timer(AUTOSAVE_INTERVAL_MS, e -> saveSession()).start();
+        new javax.swing.Timer(AUTOSAVE_INTERVAL_MS, e -> {
+            saveSession();
+            checkExternalChanges();
+        }).start();
+        frame.addWindowFocusListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowGainedFocus(java.awt.event.WindowEvent e) {
+                checkExternalChanges();
+            }
+        });
     }
 
     private void onTabChanged(JTabbedPane pane) {
@@ -147,6 +156,10 @@ public class EditorController {
         area.setWhitespaceVisible(showWhitespace);
         area.setEOLMarkersVisible(showEol);
         area.setPaintTabLines(indentGuides);
+        area.setMarkOccurrences(true);
+        area.setHighlightCurrentLine(true);
+        area.setBracketMatchingEnabled(true);
+        area.setAnimateBracketMatching(true);
         area.setFont(area.getFont().deriveFont((float) fontSize));
         applyThemeTo(area);
         area.addFocusListener(new FocusAdapter() {
@@ -156,20 +169,6 @@ public class EditorController {
             }
         });
         area.addCaretListener(e -> updateStatus());
-        area.addMouseWheelListener(
-                e -> {
-                    if ((e.getModifiersEx() & Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) == 0) return;
-                    e.consume();
-                    zoomAccum += e.getPreciseWheelRotation();
-                    while (zoomAccum >= 1) {
-                        zoom(1);
-                        zoomAccum -= 1;
-                    }
-                    while (zoomAccum <= -1) {
-                        zoom(-1);
-                        zoomAccum += 1;
-                    }
-                });
     }
 
     private Buffer createBuffer(String title) {
@@ -257,13 +256,93 @@ public class EditorController {
         saveSession();
     }
 
+    public void closeOthers() {
+        Buffer keep = current();
+        if (keep == null) return;
+        for (Buffer b : new ArrayList<>(buffers)) {
+            if (b != keep) closeTab(b);
+        }
+    }
+
+    public void closeAll() {
+        for (Buffer b : new ArrayList<>(buffers)) closeTab(b);
+    }
+
+    public void closeToRight() {
+        closeToSide(true);
+    }
+
+    public void closeToLeft() {
+        closeToSide(false);
+    }
+
+    private void closeToSide(boolean right) {
+        Buffer cur = current();
+        if (cur == null) return;
+        JTabbedPane pane = paneOf(cur);
+        int curIdx = pane.indexOfComponent(cur.getScroll());
+        if (curIdx < 0) return;
+        List<Buffer> targets = new ArrayList<>();
+        for (Buffer b : buffers) {
+            if (paneOf(b) != pane) continue;
+            int idx = pane.indexOfComponent(b.getScroll());
+            if (idx < 0) continue;
+            if (right ? idx > curIdx : idx < curIdx) targets.add(b);
+        }
+        for (Buffer b : targets) closeTab(b);
+    }
+
     public void openDialog() {
         JFileChooser fc = new JFileChooser(currentDir());
         fc.setMultiSelectionEnabled(true);
-        if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-            for (File f : fc.getSelectedFiles()) openFile(f);
-            saveSession();
-        }
+        JDialog dialog = new JDialog(frame, "Open", true);
+
+        Buffer cur = current();
+        String seed = (cur != null && cur.getFile() != null) ? cur.getFile().getAbsolutePath() : "";
+        JTextField field = new JTextField(seed);
+        JButton copy = new JButton("Copy");
+        copy.addActionListener(e -> Toolkit.getDefaultToolkit().getSystemClipboard()
+                .setContents(new StringSelection(field.getText().trim()), null));
+        JPanel top = new JPanel(new BorderLayout(6, 0));
+        top.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        top.add(new JLabel("Path:"), BorderLayout.WEST);
+        top.add(field, BorderLayout.CENTER);
+        top.add(copy, BorderLayout.EAST);
+
+        field.addActionListener(e -> {
+            String text = field.getText().trim();
+            if (text.isEmpty()) return;
+            File f = resolvePath(text);
+            if (f.isDirectory()) {
+                fc.setCurrentDirectory(f);
+            } else if (f.isFile()) {
+                openFile(f);
+                saveSession();
+                dialog.dispose();
+            }
+        });
+        fc.addActionListener(e -> {
+            if (JFileChooser.APPROVE_SELECTION.equals(e.getActionCommand())) {
+                File[] sel = fc.getSelectedFiles();
+                if (sel.length == 0 && fc.getSelectedFile() != null) sel = new File[]{fc.getSelectedFile()};
+                for (File f : sel) openFile(f);
+                saveSession();
+                dialog.dispose();
+            } else if (JFileChooser.CANCEL_SELECTION.equals(e.getActionCommand())) {
+                dialog.dispose();
+            }
+        });
+
+        dialog.add(top, BorderLayout.NORTH);
+        dialog.add(fc, BorderLayout.CENTER);
+        dialog.pack();
+        dialog.setLocationRelativeTo(frame);
+        dialog.setVisible(true);
+    }
+
+    private File resolvePath(String path) {
+        if (path.startsWith("~")) path = System.getProperty("user.home") + path.substring(1);
+        return new File(path);
     }
 
     public void openFile(File file) {
@@ -287,6 +366,7 @@ public class EditorController {
             b.getArea().setCaretPosition(0);
             b.getArea().discardAllEdits();
             b.setDirty(false);
+            b.setDiskModified(f.lastModified());
             selectBuffer(b);
             refreshTitle(b);
             pushRecent(f.getAbsolutePath());
@@ -326,6 +406,7 @@ public class EditorController {
             b.setFile(target);
             b.setSyntaxStyle(SyntaxResolver.forFileName(target.getName()));
             b.setDirty(false);
+            b.setDiskModified(target.lastModified());
             refreshTitle(b);
             pushRecent(target.getAbsolutePath());
             SessionService.deleteBackup(SessionService.backupNameFor(target));
@@ -368,8 +449,40 @@ public class EditorController {
             setBufferText(b, d.text());
             b.getArea().discardAllEdits();
             b.setDirty(false);
+            b.setDiskModified(b.getFile().lastModified());
             refreshTitle(b);
             updateStatus();
+        } catch (IOException ignored) {
+            // ignore
+        }
+    }
+
+    public void checkExternalChanges() {
+        for (Buffer b : buffers) {
+            File f = b.getFile();
+            if (f == null) continue;
+            long m = f.lastModified();
+            if (m == 0L || m == b.getDiskModified()) continue;
+            if (b.isDirty()) continue;
+            reloadSilently(b);
+        }
+    }
+
+    private void reloadSilently(Buffer b) {
+        File f = b.getFile();
+        int caret = b.getArea().getCaretPosition();
+        try {
+            TextCodec.Decoded d = TextCodec.decode(Files.readAllBytes(f.toPath()));
+            b.setCharset(d.charset());
+            b.setBom(d.bom());
+            b.setEol(d.eol());
+            setBufferText(b, d.text());
+            b.getArea().discardAllEdits();
+            b.setDirty(false);
+            b.setDiskModified(f.lastModified());
+            b.getArea().setCaretPosition(Math.min(caret, b.getArea().getDocument().getLength()));
+            refreshTitle(b);
+            if (b == current()) updateStatus();
         } catch (IOException ignored) {
             // ignore
         }
@@ -383,6 +496,189 @@ public class EditorController {
         } catch (PrinterException ignored) {
             // ignore
         }
+    }
+
+    public void reformat() {
+        Buffer b = current();
+        if (b == null) return;
+        RSyntaxTextArea area = b.getArea();
+        String sel = area.getSelectedText();
+        boolean hasSelection = sel != null && !sel.isEmpty();
+        String source = hasSelection ? sel : area.getText();
+        String style = b.getSyntaxStyle();
+        String formatted;
+        try {
+            if (SyntaxConstants.SYNTAX_STYLE_JSON.equals(style)) {
+                formatted = formatJson(source);
+            } else if (SyntaxConstants.SYNTAX_STYLE_XML.equals(style)) {
+                formatted = formatXml(source);
+            } else if (SyntaxConstants.SYNTAX_STYLE_JAVA.equals(style)) {
+                formatted = formatJava(source);
+            } else if (SyntaxConstants.SYNTAX_STYLE_HTML.equals(style)) {
+                formatted = formatHtml(source);
+            } else if (SyntaxConstants.SYNTAX_STYLE_CSS.equals(style)) {
+                formatted = formatCss(source);
+            } else {
+                String cmd = externalFormatterCommand(style);
+                if (cmd == null) {
+                    frame.setStatus("No reformatter for " + SyntaxResolver.nameFor(style));
+                    return;
+                }
+                formatted = runExternalFormatter(cmd, source);
+            }
+        } catch (Exception ex) {
+            frame.setStatus("Reformat failed for " + SyntaxResolver.nameFor(style)
+                    + " - is the formatter installed?");
+            return;
+        }
+        if (formatted == null || formatted.equals(source)) return;
+        if (hasSelection) {
+            area.replaceSelection(formatted);
+        } else {
+            int caret = area.getCaretPosition();
+            area.setText(formatted);
+            area.setCaretPosition(Math.min(caret, formatted.length()));
+        }
+        frame.setStatus(hasSelection ? "Reformatted selection" : "Reformatted");
+    }
+
+    private static String formatJson(String json) {
+        StringBuilder out = new StringBuilder();
+        String unit = "    ";
+        int depth = 0;
+        boolean inString = false;
+        boolean escape = false;
+        for (int i = 0; i < json.length(); i++) {
+            char ch = json.charAt(i);
+            if (inString) {
+                out.append(ch);
+                if (escape) escape = false;
+                else if (ch == '\\') escape = true;
+                else if (ch == '"') inString = false;
+                continue;
+            }
+            switch (ch) {
+                case '"' -> {
+                    inString = true;
+                    out.append(ch);
+                }
+                case '{', '[' -> {
+                    int j = i + 1;
+                    while (j < json.length() && Character.isWhitespace(json.charAt(j))) j++;
+                    if (j < json.length() && (json.charAt(j) == '}' || json.charAt(j) == ']')) {
+                        out.append(ch).append(json.charAt(j));
+                        i = j;
+                    } else {
+                        depth++;
+                        out.append(ch).append('\n').append(unit.repeat(depth));
+                    }
+                }
+                case '}', ']' -> {
+                    depth = Math.max(0, depth - 1);
+                    out.append('\n').append(unit.repeat(depth)).append(ch);
+                }
+                case ',' -> out.append(ch).append('\n').append(unit.repeat(depth));
+                case ':' -> out.append(": ");
+                default -> {
+                    if (!Character.isWhitespace(ch)) out.append(ch);
+                }
+            }
+        }
+        return out.toString();
+    }
+
+    private static String formatXml(String xml) throws Exception {
+        javax.xml.parsers.DocumentBuilderFactory dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+        dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        org.w3c.dom.Document doc = dbf.newDocumentBuilder()
+                .parse(new org.xml.sax.InputSource(new java.io.StringReader(xml)));
+        org.w3c.dom.NodeList blanks = (org.w3c.dom.NodeList) javax.xml.xpath.XPathFactory.newInstance().newXPath()
+                .evaluate("//text()[normalize-space(.)='']", doc, javax.xml.xpath.XPathConstants.NODESET);
+        for (int i = 0; i < blanks.getLength(); i++) {
+            org.w3c.dom.Node n = blanks.item(i);
+            n.getParentNode().removeChild(n);
+        }
+        javax.xml.transform.Transformer t = javax.xml.transform.TransformerFactory.newInstance().newTransformer();
+        t.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes");
+        t.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+        java.io.StringWriter out = new java.io.StringWriter();
+        t.transform(new javax.xml.transform.dom.DOMSource(doc), new javax.xml.transform.stream.StreamResult(out));
+        return out.toString().trim();
+    }
+
+    private static String formatJava(String source) throws Exception {
+        return new com.google.googlejavaformat.java.Formatter().formatSource(source);
+    }
+
+    private static String formatHtml(String source) {
+        org.jsoup.nodes.Document doc = org.jsoup.Jsoup.parse(source);
+        doc.outputSettings().prettyPrint(true).indentAmount(4);
+        return doc.outerHtml();
+    }
+
+    private static String formatCss(String css) {
+        StringBuilder out = new StringBuilder();
+        String unit = "    ";
+        int depth = 0;
+        int i = 0;
+        int n = css.length();
+        while (i < n) {
+            char ch = css.charAt(i);
+            if (ch == '/' && i + 1 < n && css.charAt(i + 1) == '*') {
+                int end = css.indexOf("*/", i + 2);
+                if (end < 0) end = n - 2;
+                out.append(css, i, end + 2);
+                i = end + 2;
+                continue;
+            }
+            if (ch == '"' || ch == '\'') {
+                int j = i + 1;
+                while (j < n && css.charAt(j) != ch) {
+                    if (css.charAt(j) == '\\') j++;
+                    j++;
+                }
+                int stop = Math.min(j + 1, n);
+                out.append(css, i, stop);
+                i = stop;
+                continue;
+            }
+            if (ch == '{') {
+                while (out.length() > 0 && out.charAt(out.length() - 1) == ' ') out.setLength(out.length() - 1);
+                depth++;
+                out.append(" {\n").append(unit.repeat(depth));
+            } else if (ch == '}') {
+                while (out.length() > 0 && Character.isWhitespace(out.charAt(out.length() - 1))) out.setLength(out.length() - 1);
+                depth = Math.max(0, depth - 1);
+                out.append('\n').append(unit.repeat(depth)).append('}').append('\n').append(unit.repeat(depth));
+            } else if (ch == ';') {
+                out.append(';').append('\n').append(unit.repeat(depth));
+            } else if (Character.isWhitespace(ch)) {
+                if (out.length() > 0 && !Character.isWhitespace(out.charAt(out.length() - 1))) out.append(' ');
+            } else {
+                out.append(ch);
+            }
+            i++;
+        }
+        return out.toString().replaceAll("(?m)[ \\t]+$", "").replaceAll("\\n{3,}", "\n\n").trim();
+    }
+
+    private static String externalFormatterCommand(String style) {
+        if (SyntaxConstants.SYNTAX_STYLE_PYTHON.equals(style)) return "black -q -";
+        if (SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT.equals(style)) return "prettier --parser babel";
+        if (SyntaxConstants.SYNTAX_STYLE_TYPESCRIPT.equals(style)) return "prettier --parser typescript";
+        return null;
+    }
+
+    private String runExternalFormatter(String cmdLine, String source) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder("/bin/zsh", "-lc", cmdLine);
+        pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+        Process p = pb.start();
+        try (java.io.OutputStream os = p.getOutputStream()) {
+            os.write(source.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+        byte[] out = p.getInputStream().readAllBytes();
+        if (p.waitFor() != 0) throw new RuntimeException("formatter exited non-zero");
+        return new String(out, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     public void undo() {
@@ -483,6 +779,17 @@ public class EditorController {
         if (b == null || query.isEmpty()) return;
         SearchResult r = SearchEngine.replaceAll(b.getArea(), context(query, regex, matchCase, wholeWord, true, replacement));
         frame.setStatus("Replaced " + r.getCount() + " occurrence(s)");
+    }
+
+    public void replaceAllInAll(String query, boolean regex, boolean matchCase, boolean wholeWord, String replacement) {
+        if (query.isEmpty()) return;
+        int total = 0;
+        for (Buffer b : buffers) {
+            SearchResult r = SearchEngine.replaceAll(b.getArea(),
+                    context(query, regex, matchCase, wholeWord, true, replacement));
+            total += r.getCount();
+        }
+        frame.setStatus("Replaced " + total + " occurrence(s) in " + buffers.size() + " document(s)");
     }
 
     private SearchContext context(String query, boolean regex, boolean matchCase, boolean wholeWord,

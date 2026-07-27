@@ -31,6 +31,8 @@ public class Buffer {
     @Setter
     private boolean dirty;
     @Setter
+    private long diskModified;
+    @Setter
     private String title;
 
     public Buffer(String title, RSyntaxTextArea area) {
