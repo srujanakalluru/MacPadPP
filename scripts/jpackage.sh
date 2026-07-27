@@ -30,6 +30,13 @@ ICON=""; [ -f src/main/packaging/icon.icns ] && ICON="--icon src/main/packaging/
   --java-options -Dapple.awt.application.name=MacPad++ \
   --java-options -Xdock:name=MacPad++ \
   --java-options --enable-native-access=ALL-UNNAMED \
+  --java-options --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+  --java-options --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
+  --java-options --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
+  --java-options --add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED \
+  --java-options --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
+  --java-options --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
+  --java-options --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
   --dest target/jp/app
 
 APP="target/jp/app/MacPad++.app"

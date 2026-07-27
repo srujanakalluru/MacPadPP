@@ -172,7 +172,7 @@ public class EditorController {
     }
 
     private Buffer createBuffer(String title) {
-        RSyntaxTextArea area = new RSyntaxTextArea();
+        RSyntaxTextArea area = new ScrollArea();
         configureArea(area);
         Buffer b = new Buffer(title, area);
         buffers.add(b);
@@ -1320,7 +1320,7 @@ public class EditorController {
             selectCloneTab(b);
             return;
         }
-        RSyntaxTextArea second = new RSyntaxTextArea((RSyntaxDocument) b.getArea().getDocument());
+        RSyntaxTextArea second = new ScrollArea((RSyntaxDocument) b.getArea().getDocument());
         configureArea(second);
         areaToBuffer.put(second, b);
         splitClones.put(b, second);
@@ -1372,6 +1372,26 @@ public class EditorController {
             if (pane.getComponentAt(i) instanceof RTextScrollPane sp && area.equals(sp.getTextArea())) return i;
         }
         return -1;
+    }
+
+    private static final class ScrollArea extends RSyntaxTextArea {
+        ScrollArea() {
+            super();
+        }
+
+        ScrollArea(RSyntaxDocument doc) {
+            super(doc);
+        }
+
+        @Override
+        public java.awt.Dimension getPreferredSize() {
+            java.awt.Dimension d = super.getPreferredSize();
+            if (getParent() instanceof javax.swing.JViewport vp) {
+                int extra = vp.getHeight() - getFontMetrics(getFont()).getHeight();
+                if (extra > 0) d.height += extra;
+            }
+            return d;
+        }
     }
 
     public void renameCurrentFile() {
