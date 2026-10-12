@@ -1,7 +1,7 @@
 package com.sk.macpad.ui;
 
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.sk.macpad.control.EditorController;
 import com.sk.macpad.model.Eol;
 import com.sk.macpad.service.FileSearchService;
@@ -37,20 +37,43 @@ public class MainFrame extends JFrame {
 
     public MainFrame() {
         super("MacPad++");
-        applyLookAndFeel(true);
+        applyLookAndFeel(false);
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setSize(1150, 780);
         setLocationRelativeTo(null);
-        getRootPane().putClientProperty("apple.awt.fullscreenable", Boolean.TRUE);
 
-        tabs.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        secondaryTabs.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        // Apple-style unified window chrome: toolbar area blends into the title bar
+        // and traffic lights overlay the content, matching native macOS apps.
+        JRootPane root = getRootPane();
+        root.putClientProperty("apple.awt.fullscreenable", Boolean.TRUE);
+        root.putClientProperty("apple.awt.transparentTitleBar", Boolean.TRUE);
+        root.putClientProperty("apple.awt.windowTitleVisible", Boolean.FALSE);
+        root.putClientProperty("JRootPane.titleBarBackground", UIManager.getColor("TitlePane.background"));
+
+        styleTabs(tabs);
+        styleTabs(secondaryTabs);
         viewSplit.setResizeWeight(0.5);
+        viewSplit.setBorder(BorderFactory.createEmptyBorder());
+        viewSplit.setDividerSize(1);
         center = tabs;
         add(center, BorderLayout.CENTER);
 
-        status.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
+        status.setFont(status.getFont().deriveFont(Font.PLAIN, 11f));
+        status.setForeground(UIManager.getColor("Label.disabledForeground"));
+        status.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, UIManager.getColor("Separator.foreground")),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)));
         add(status, BorderLayout.SOUTH);
+    }
+
+    /** Flat, underlined tab style — the macOS Safari / Xcode treatment. */
+    private static void styleTabs(JTabbedPane pane) {
+        pane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        pane.putClientProperty("JTabbedPane.tabType", "underlined");
+        pane.putClientProperty("JTabbedPane.showTabSeparators", Boolean.FALSE);
+        pane.putClientProperty("JTabbedPane.tabsOverlapBorder", Boolean.TRUE);
+        pane.putClientProperty("JTabbedPane.hasFullBorder", Boolean.FALSE);
+        pane.putClientProperty("JTabbedPane.tabHeight", 32);
     }
 
     public void setController(EditorController controller) {
@@ -118,11 +141,44 @@ public class MainFrame extends JFrame {
 
     public void applyLookAndFeel(boolean dark) {
         try {
-            UIManager.setLookAndFeel(dark ? new FlatDarkLaf() : new FlatLightLaf());
+            UIManager.setLookAndFeel(dark ? new FlatMacDarkLaf() : new FlatMacLightLaf());
+            installAppleDefaults();
             SwingUtilities.updateComponentTreeUI(this);
         } catch (UnsupportedLookAndFeelException ignored) {
             // ignore
         }
+    }
+
+    /**
+     * Global UI tuning that gives Swing an Apple-native silhouette: fully-rounded
+     * controls, pill scrollbars, hairline separators, and a system-font menu bar.
+     * These are FlatLaf client-property defaults — applied once per LaF install so
+     * they survive {@link SwingUtilities#updateComponentTreeUI}.
+     */
+    private static void installAppleDefaults() {
+        // Rounded corners on buttons, text fields, combos — matches macOS Big Sur+.
+        UIManager.put("Button.arc", 10);
+        UIManager.put("Component.arc", 10);
+        UIManager.put("CheckBox.arc", 6);
+        UIManager.put("ProgressBar.arc", 999);
+        UIManager.put("TextComponent.arc", 8);
+
+        // Pill scrollbars with no track buttons — the trackpad-era macOS style.
+        UIManager.put("ScrollBar.showButtons", false);
+        UIManager.put("ScrollBar.thumbArc", 999);
+        UIManager.put("ScrollBar.thumbInsets", new Insets(2, 2, 2, 2));
+        UIManager.put("ScrollBar.track", new Color(0, 0, 0, 0));
+        UIManager.put("ScrollBar.width", 12);
+
+        // Hairline separators and quieter table/tree chrome.
+        UIManager.put("Separator.stripeWidth", 1);
+        UIManager.put("SplitPane.oneTouchButtonSize", 0);
+        UIManager.put("MenuBar.borderColor", new Color(0, 0, 0, 0));
+        UIManager.put("ToolBar.borderColor", new Color(0, 0, 0, 0));
+
+        // Slightly tighter title bar height and menu padding sit closer to macOS metrics.
+        UIManager.put("TitlePane.menuBarEmbedded", true);
+        UIManager.put("MenuItem.selectionArc", 6);
     }
 
     public void showSearchResults(File root, List<FileSearchService.Match> matches) {

@@ -59,7 +59,7 @@ public class EditorController {
     private final java.util.Map<Buffer, RSyntaxTextArea> splitClones = new java.util.IdentityHashMap<>();
     private RSyntaxTextArea focusedArea;
 
-    private boolean dark = true;
+    private boolean dark = false;
     private int fontSize = 13;
     private boolean wordWrap = false;
     private boolean showWhitespace = false;
@@ -160,7 +160,9 @@ public class EditorController {
         area.setHighlightCurrentLine(true);
         area.setBracketMatchingEnabled(true);
         area.setAnimateBracketMatching(true);
-        area.setFont(area.getFont().deriveFont((float) fontSize));
+        area.setFont(editorFont(fontSize));
+        // Breathing room around the glyphs — matches the Xcode / Notes gutter inset.
+        area.setMargin(new Insets(10, 14, 10, 14));
         applyThemeTo(area);
         area.addFocusListener(new FocusAdapter() {
             @Override
@@ -212,13 +214,17 @@ public class EditorController {
     }
 
     private JComponent tabComponent(Buffer b) {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         panel.setOpaque(false);
         JLabel label = new JLabel();
-        JButton close = new JButton("×");
-        close.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+        JButton close = new JButton("✕");
+        close.setFont(close.getFont().deriveFont(Font.PLAIN, 10f));
+        close.putClientProperty("JButton.buttonType", "borderless");
+        close.putClientProperty("JButton.squareSize", Boolean.TRUE);
+        close.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
         close.setContentAreaFilled(false);
         close.setFocusable(false);
+        close.setToolTipText("Close tab");
         close.addActionListener(e -> closeTab(b));
         panel.add(label);
         panel.add(close);
@@ -910,7 +916,7 @@ public class EditorController {
 
     public void zoom(int delta) {
         fontSize = delta == 0 ? 13 : Math.max(8, Math.min(40, fontSize + delta));
-        for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setFont(a.getFont().deriveFont((float) fontSize));
+        for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setFont(editorFont(fontSize));
         saveSession();
     }
 
@@ -938,16 +944,35 @@ public class EditorController {
     }
 
     private void applyThemeTo(RSyntaxTextArea area) {
+        // "idea" renders black-on-white with the muted Apple-style syntax palette
+        // (keywords in indigo, strings in muted red) rather than the stock neon default.
         String resource = dark ? "/org/fife/ui/rsyntaxtextarea/themes/dark.xml"
-                : "/org/fife/ui/rsyntaxtextarea/themes/default.xml";
+                : "/org/fife/ui/rsyntaxtextarea/themes/idea.xml";
         try (InputStream in = getClass().getResourceAsStream(resource)) {
             if (in != null) {
                 Theme.load(in).apply(area);
-                area.setFont(area.getFont().deriveFont((float) fontSize));
+                area.setFont(editorFont(fontSize));
             }
         } catch (IOException ignored) {
             // ignore
         }
+    }
+
+    /**
+     * Pick the best Apple-native monospaced face available on the host JDK.
+     * SF Mono ships with macOS 10.11+ but is not advertised to Java; Menlo is the
+     * reliable fallback that still gives the user the system programmer face.
+     */
+    private static Font editorFont(int size) {
+        String[] preferred = {"SF Mono", "Menlo", "Monaco", Font.MONOSPACED};
+        Set<String> installed = new HashSet<>(Arrays.asList(
+                GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()));
+        for (String name : preferred) {
+            if (installed.contains(name) || Font.MONOSPACED.equals(name)) {
+                return new Font(name, Font.PLAIN, size);
+            }
+        }
+        return new Font(Font.MONOSPACED, Font.PLAIN, size);
     }
 
     public void setLanguage(String style) {
@@ -1022,7 +1047,7 @@ public class EditorController {
 
     public void setFontSize(int size) {
         fontSize = Math.max(8, Math.min(40, size));
-        for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setFont(a.getFont().deriveFont((float) fontSize));
+        for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setFont(editorFont(fontSize));
         saveSession();
     }
 
