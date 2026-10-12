@@ -542,6 +542,31 @@ public class EditorController {
         frame.setStatus(hasSelection ? "Reformatted selection" : "Reformatted");
     }
 
+    public void javaWrap() {
+        Buffer b = current();
+        if (b == null) return;
+        RSyntaxTextArea area = b.getArea();
+        String sel = area.getSelectedText();
+        boolean hasSelection = sel != null && !sel.isEmpty();
+        String code = (hasSelection ? sel : area.getText()).stripTrailing();
+        String indented = code.isEmpty() ? ""
+                : code.lines().map(l -> l.isBlank() ? "" : "        " + l).collect(Collectors.joining("\n"));
+        String wrapped = "public class Main {\n"
+                + "    public static void main(String[] args) {\n"
+                + indented + "\n"
+                + "    }\n"
+                + "\n"
+                + "}\n";
+        if (hasSelection) {
+            area.replaceSelection(wrapped);
+        } else {
+            int caret = area.getCaretPosition();
+            area.setText(wrapped);
+            area.setCaretPosition(Math.min(caret, wrapped.length()));
+        }
+        frame.setStatus("Wrapped in Main class");
+    }
+
     private static String formatJson(String json) {
         StringBuilder out = new StringBuilder();
         String unit = "    ";

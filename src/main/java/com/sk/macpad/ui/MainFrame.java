@@ -321,6 +321,7 @@ public class MainFrame extends JFrame {
                 new ActionEntry("Spaces to Tabs", "", controller::indentToTabs),
                 new ActionEntry("Toggle Comment", "Cmd /", controller::toggleComment),
                 new ActionEntry("Reformat", "Opt Cmd L", controller::reformat),
+                new ActionEntry("Java Wrap", "", controller::javaWrap),
                 sep,
                 new ActionEntry("Find…", "Cmd F", () -> showFindDialog(false)),
                 new ActionEntry("Replace…", "Shift Cmd F", () -> showFindDialog(true)),
@@ -498,6 +499,7 @@ public class MainFrame extends JFrame {
         edit.addSeparator();
         edit.add(item("Toggle Comment", '/', mask, e -> controller.toggleComment()));
         edit.add(item("Reformat", 'L', mask | java.awt.event.InputEvent.ALT_DOWN_MASK, e -> controller.reformat()));
+        edit.add(item("Java Wrap", e -> controller.javaWrap()));
         return edit;
     }
 
