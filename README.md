@@ -22,7 +22,15 @@ Requires macOS (Apple Silicon or Intel).
 
 1. Download the latest **MacPad++.dmg** from the [Releases page](https://github.com/srujanakalluru/MacPadPP/releases/latest).
 2. Open the DMG and drag **MacPad++.app** into Applications.
-3. Launch it once so macOS registers it - MacPad++ then appears under Finder's right-click **Open With**. If macOS blocks the first launch, right-click **MacPad++.app** and choose **Open**.
+3. Launch it once so macOS registers it - MacPad++ then appears under Finder's right-click **Open With**.
+
+macOS blocks unsigned apps on first launch ("Apple could not verify ... is free of malware"). To allow MacPad++, run:
+
+```
+sudo xattr -dr com.apple.quarantine /Applications/MacPad++.app
+```
+
+Enter your password when prompted, then open MacPad++ normally. (Without Terminal: open **System Settings → Privacy & Security**, scroll to the blocked-app message, and click **Open Anyway**.)
 
 ## Build from source
 
