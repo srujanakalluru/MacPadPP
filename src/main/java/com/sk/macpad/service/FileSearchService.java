@@ -1,7 +1,9 @@
 package com.sk.macpad.service;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -54,14 +56,23 @@ public final class FileSearchService {
                         return FileVisitResult.CONTINUE;
                     }
                     try {
-                        byte[] bytes = Files.readAllBytes(file);
-                        for (int i = 0; i < Math.min(bytes.length, 8192); i++) {
-                            if (bytes[i] == 0) return FileVisitResult.CONTINUE;
+                        // Binary detection on first 8 KiB only - avoids reading the whole file.
+                        byte[] head = new byte[8192];
+                        int headLen;
+                        try (InputStream fis = Files.newInputStream(file)) {
+                            headLen = fis.read(head);
                         }
-                        String[] lines = new String(bytes, StandardCharsets.UTF_8).split("\n", -1);
-                        for (int i = 0; i < lines.length; i++) {
-                            if (pattern.matcher(lines[i]).find()) {
-                                matches.add(new Match(file.toFile(), i + 1, lines[i].strip()));
+                        for (int i = 0; i < headLen; i++) {
+                            if (head[i] == 0) return FileVisitResult.CONTINUE;
+                        }
+                        try (BufferedReader br = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+                            String line;
+                            int lineNum = 0;
+                            while ((line = br.readLine()) != null && matches.size() <= MAX_MATCHES) {
+                                lineNum++;
+                                if (pattern.matcher(line).find()) {
+                                    matches.add(new Match(file.toFile(), lineNum, line.strip()));
+                                }
                             }
                         }
                     } catch (IOException ignored) {

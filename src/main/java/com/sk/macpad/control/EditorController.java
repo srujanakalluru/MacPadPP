@@ -926,13 +926,14 @@ public class EditorController {
 
     public void magnify(double delta) {
         magnifyAccum += delta;
-        while (magnifyAccum >= 0.1) {
-            zoom(1);
-            magnifyAccum -= 0.1;
-        }
-        while (magnifyAccum <= -0.1) {
-            zoom(-1);
-            magnifyAccum += 0.1;
+        int steps = 0;
+        while (magnifyAccum >= 0.1) { steps++; magnifyAccum -= 0.1; }
+        while (magnifyAccum <= -0.1) { steps--; magnifyAccum += 0.1; }
+        if (steps != 0) {
+            fontSize = Math.max(8, Math.min(40, fontSize + steps));
+            Font f = editorFont(fontSize);
+            for (RSyntaxTextArea a : areaToBuffer.keySet()) a.setFont(f);
+            saveSession();
         }
     }
 
@@ -958,21 +959,21 @@ public class EditorController {
         }
     }
 
-    /**
-     * Pick the best Apple-native monospaced face available on the host JDK.
-     * SF Mono ships with macOS 10.11+ but is not advertised to Java; Menlo is the
-     * reliable fallback that still gives the user the system programmer face.
-     */
-    private static Font editorFont(int size) {
-        String[] preferred = {"SF Mono", "Menlo", "Monaco", Font.MONOSPACED};
-        Set<String> installed = new HashSet<>(Arrays.asList(
-                GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()));
-        for (String name : preferred) {
-            if (installed.contains(name) || Font.MONOSPACED.equals(name)) {
-                return new Font(name, Font.PLAIN, size);
-            }
+    // Querying available font families is an expensive AWT call; cache it once at startup.
+    private static final Set<String> INSTALLED_FONTS = Set.copyOf(Arrays.asList(
+            GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()));
+
+    private static final String EDITOR_FONT_FAMILY = resolveEditorFontFamily();
+
+    private static String resolveEditorFontFamily() {
+        for (String name : new String[]{"SF Mono", "Menlo", "Monaco"}) {
+            if (INSTALLED_FONTS.contains(name)) return name;
         }
-        return new Font(Font.MONOSPACED, Font.PLAIN, size);
+        return Font.MONOSPACED;
+    }
+
+    private static Font editorFont(int size) {
+        return new Font(EDITOR_FONT_FAMILY, Font.PLAIN, size);
     }
 
     public void setLanguage(String style) {
